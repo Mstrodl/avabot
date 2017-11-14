@@ -33,6 +33,7 @@ class AvaBot(commands.Bot):
     async def _db_connect(self):
         conn = await self.r.connect("localhost", 28015, "ava")
         conn.repl()
+        self.r_connection = conn
         
 ava = AvaBot(
     command_prefix="av!",

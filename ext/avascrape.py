@@ -22,15 +22,14 @@ class AvaScrape(Cog):
         if self.ready:
             return False
         self.ready = True
-        while True:
-            if datetime.today().weekday() in self.scrape_days:
-                await self.scrape()
-                await asyncio.sleep(3600)
+        await self.looper()
+        return
 
-    async def looper(self, func, delay):
-        while True:
-            await func(self)
-            await asyncio.sleep(delay)
+    async def looper(self):
+        if datetime.today().weekday() in self.scrape_days:
+            await self.scrape()
+
+        self.bot.loop.call_later(3600, self.looper)
 
     @commands.command(alises=["scrape", "scr"])
     @commands.is_owner()

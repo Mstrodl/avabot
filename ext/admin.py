@@ -316,6 +316,8 @@ class Admin(Cog):
     @commands.is_owner()
     async def die(self, ctx):
         await ctx.send("oof.")
+        await self.bot.r_connection.close()
+        await self.bot.session.close()
         await ctx.bot.logout()
 
     @commands.command()
