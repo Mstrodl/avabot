@@ -1,6 +1,8 @@
-from .common import Cog
-from discord.ext import commands
 import time
+
+from discord.ext import commands
+
+from .common import Cog
 
 class Basic(Cog):
     """Basic commands"""
