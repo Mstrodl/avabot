@@ -154,7 +154,7 @@ class Admin(Cog):
                     await ctx.send("oof")
 
 
-    @commands.command(name="retry", hidden=True)
+    @commands.command(hidden=True)
     @commands.is_owner()
     async def retry(self, ctx):
         """ Retries the previously executed Python code. """
@@ -178,7 +178,7 @@ class Admin(Cog):
 
         await self.execute(ctx, code)
 
-    @commands.command(pass_context=True, hidden=True)
+    @commands.command(hidden=True)
     async def repl(self, ctx):
         """Launches an interactive REPL session."""
         variables = {
