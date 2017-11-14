@@ -18,17 +18,17 @@ Features:
 """
 
 import io
+import os
 import logging
 import textwrap
 import traceback
+import asyncio
+import inspect
 from contextlib import redirect_stdout
 
 import aiohttp
 import discord
 from discord.ext import commands
-import os
-import asyncio
-import inspect
 
 from .common import Cog, hastebin
 
@@ -314,9 +314,9 @@ class Admin(Cog):
 
     @commands.command(alias=["shutdown", "off", "poweroff"])
     @commands.is_owner()
-    async def die(self,ctx):
+    async def die(self, ctx):
         await ctx.send("oof.")
-        sys.exit(0)
+        await ctx.bot.logout()
 
     @commands.command()
     @commands.is_owner()
