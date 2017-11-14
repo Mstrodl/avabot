@@ -1,15 +1,14 @@
-from .common import Cog
+import asyncio
+import urllib.parse as parse
+from datetime import datetime
+
+import aiohttp
+import discord
 from discord.ext import commands
 from lxml import html
-import aiohttp
-import urllib.parse as parse
+
 import avaconfig as cfg
-import time
-from datetime import datetime
-import threading
-import asyncio
-import discord
-from concurrent.futures import ProcessPoolExecutor
+from .common import Cog
 
 class AvaScrape(Cog):
     """Commands used to control the scraper"""
@@ -42,7 +41,7 @@ class AvaScrape(Cog):
 
     async def scrape(self):
         """Scrapes avasdemon.com for new content"""
-        db_res = await self.bot.loop.run_in_executor(ProcessPoolExecutor(), self.bot.r.table("data").get("lastpage").run)
+        db_res = await self.bot.r.table("data").get("lastpage").run()
         if not db_res:
             last_known_page = 0
         else:
@@ -64,11 +63,10 @@ class AvaScrape(Cog):
         else:
             # Otherwise, there's a new page! Alert those that are subscribed! :D
             await self.alert_users(last_known_page + 1, latest_page)
-            # Asyncio is annoying so we need this
-            await self.bot.loop.run_in_executor(ProcessPoolExecutor(), self.bot.r.table("data").update({
+            await self.bot.r.table("data").update({
                 "id": "lastpage",
                 "value": latest_page
-            }).run)
+            }).run()
             return latest_page
 
     async def alert_users(self, first_new_page, last_new_page):

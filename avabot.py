@@ -1,7 +1,10 @@
-from discord.ext import commands
-import avaconfig as cfg
-import rethinkdb as r
+import logging
+
 import aiohttp
+import rethinkdb as r
+from discord.ext import commands
+
+import avaconfig as cfg
 
 cog_list = [
     "admin",
@@ -12,22 +15,27 @@ cog_list = [
 class AvaBot(commands.Bot):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self.logger = logging.getLogger("avabot")
         self.session = aiohttp.ClientSession(loop=self.loop)
-        self.config = cfg 
+
+        # We only need to connect to rethink once...
+        self.r = r
+        self.r.set_loop_type("asyncio")
+        self.r_connection = self.loop.create_task(self._db_connect())
 
         for cog_name in cog_list:
             try:
                 print(f"Loading {cog_name}")
                 self.load_extension(f"ext.{cog_name}")
             except Exception as err:
-                print(f"Failed to load {cog_name}!!11!!11!!!11")
+                logging.error(f"Failed to load {cog_name}!!11!!11!!!11")
 
-        # We only need to connect to rethink once...
-        self.r = r
-        self.r.connect("localhost", 28015, "ava").repl()
-
+    async def _db_connect(self):
+        conn = await self.r.connect("localhost", 28015, "ava")
+        conn.repl()
+        
 ava = AvaBot(
-    command_prefix="a!",
+    command_prefix="av!",
     description="A bot that scrapes avasdemon.com for updates and announces them to people opted in!",
     pm_help=None
 )
