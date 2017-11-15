@@ -15,7 +15,7 @@ class AvaScrape(Cog):
 
     def __init__(self, bot):
         super().__init__(bot)
-        self.scrape_days = [0, 1]
+        self.scrape_days = [2, 3, 4]
         self.ready = False
 
     async def on_ready(self):
