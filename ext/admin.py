@@ -315,6 +315,7 @@ class Admin(Cog):
     @commands.command(alias=["shutdown", "off", "poweroff"])
     @commands.is_owner()
     async def die(self, ctx):
+        """Shuts down the bot safely"""
         await ctx.send("oof.")
         await self.bot.r_connection.close()
         await self.bot.session.close()
