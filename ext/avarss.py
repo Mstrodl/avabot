@@ -21,6 +21,7 @@ class AvaRSS(Cog):
         self.check_loop = None
 
     async def on_ready(self):
+        self.bot.logger.info("Bot ready!")
         async def run_check():
             while True:
                 self.bot.logger.info("Checking RSS automatically...")
@@ -72,7 +73,7 @@ class AvaRSS(Cog):
     @commands.command()
     @commands.is_owner()
     async def force_recheck(self, ctx):
-        await self.check()
+        await self.check_rss()
         await ctx.send("Done")
 
     @commands.command(aliases=["unsubscribe", "unsub", "sub"])

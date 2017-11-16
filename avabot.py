@@ -16,6 +16,7 @@ cog_list = [
 class AvaBot(commands.Bot):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        logging.basicConfig(format="[%(levelname)s] - %(message)s", level=logging.INFO)
         self.logger = logging.getLogger("avabot")
         self.session = aiohttp.ClientSession(loop=self.loop)
 
