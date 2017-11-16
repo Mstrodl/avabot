@@ -19,6 +19,7 @@ class AvaBot(commands.Bot):
         logging.basicConfig(format="[%(levelname)s] - %(message)s", level=logging.INFO)
         self.logger = logging.getLogger("avabot")
         self.session = aiohttp.ClientSession(loop=self.loop)
+        self.prod = True if os.environ.get("pm_id") else False
 
         # We only need to connect to rethink once...
         self.r = r

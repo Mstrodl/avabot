@@ -26,7 +26,7 @@ class AvaRSS(Cog):
             while True:
                 self.bot.logger.info("Checking RSS automatically...")
                 await self.check_rss()
-                await asyncio.sleep(15 * 60) # Loop every 15 min
+                await asyncio.sleep(5 * 60) # Check RSS every 5 min
         self.check_loop = self.bot.loop.create_task(run_check())
 
     async def check_rss(self):
@@ -49,7 +49,8 @@ class AvaRSS(Cog):
                     self.bot.logger.info("No new pages")
                 else:
                     self.bot.logger.info("Found a new page!")
-                    await self.announce_pages(self.last_known_page + 1, pages[0]["number"])
+                    new_pages = [page for page in pages if page["number"] > self.last_known_page]
+                    await self.announce_pages(new_pages[-1], new_pages[0])
                     self.last_known_page = pages[0]["number"]
             else:
                 raise RSSException(original_text)
@@ -57,18 +58,24 @@ class AvaRSS(Cog):
     async def announce_pages(self, oldest_page, newest_page):
         """Alerts the users of a new page!"""
         channel = self.bot.get_channel(cfg.alert_channel)
-        new_page_role = discord.utils.get(channel.guild.roles, id=cfg.new_page_role)
-        await new_page_role.edit(mentionable=True,
-                                 reason="New page!")
         newest_page_n = newest_page["number"]
         oldest_page_n = oldest_page["number"]
         oldest_page_link = oldest_page["link"]
+        new_page_role = discord.utils.get(channel.guild.roles,
+                                          id=cfg.new_page_role)
+
+        if self.bot.prod: await new_page_role.edit(mentionable=True,
+                                                   reason="New page!")
+        else: await new_page_role.edit(mentionable=False,
+                                       reason="Local bot, new page without ping")
+        
         await channel.send(f"{new_page_role.mention} Henlo bitches! More Ava's demon pages!!1111!!!11!!!\n"
                            f"Pages {oldest_page_n}-{newest_page_n} were just released"
                            f"({newest_page_n - oldest_page_n} pages)!\n"
                            f"View: {oldest_page_link}")
-        await new_page_role.edit(mentionable=False,
-                                 reason="New page!")
+        
+        if self.bot.prod: await new_page_role.edit(mentionable=False,
+                                                   reason="New page!")
 
     @commands.command()
     @commands.is_owner()
