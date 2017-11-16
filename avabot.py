@@ -10,7 +10,7 @@ import avaconfig as cfg
 cog_list = [
     "admin",
     "basic",
-    "avascrape"
+    "avarss"
 ]
 
 class AvaBot(commands.Bot):
@@ -30,7 +30,7 @@ class AvaBot(commands.Bot):
                 self.load_extension(f"ext.{cog_name}")
             except Exception as err:
                 print(err)
-                logging.error(f"Failed to load {cog_name}!!11!!11!!!11")
+                self.logger.error(f"Failed to load {cog_name}!!11!!11!!!11")
 
     async def _db_connect(self):
         conn = await self.r.connect("localhost", 28015, "ava")

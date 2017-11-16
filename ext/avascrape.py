@@ -24,20 +24,21 @@ class AvaScrape(Cog):
             return False
         self.ready = True
         self.loop_task = self.bot.loop.create_task(self.looper())
-        return
 
     async def looper(self):
         while True:
             if datetime.today().weekday() in self.scrape_days:
+                self.bot.logger.info("Automatically scraping!")
                 await self.scrape()
-            await asyncio.sleep(3600)
+            await asyncio.sleep(900)
 
     @commands.command(alises=["scrape", "scr"])
     @commands.is_owner()
     async def forcescrape(self, ctx):
         """Forces another scrape"""
+        message = await ctx.send("Scraping...")
         await self.scrape()
-        await ctx.send("Scraped!")
+        return await message.edit("Scraped!")
 
     async def scrape(self):
         """Scrapes avasdemon.com for new content"""
@@ -62,14 +63,15 @@ class AvaScrape(Cog):
             return False
         else:
             # Otherwise, there's a new page! Alert those that are subscribed! :D
-            await self.alert_users(last_known_page + 1, latest_page)
+            self.bot.logger.info(f"Found new page")
+            await self.alert_users(latest_page)
             await self.bot.r.table("data").update({
                 "id": "lastpage",
                 "value": latest_page
             }).run()
             return latest_page
 
-    async def alert_users(self, first_new_page, last_new_page):
+    async def alert_users(self, last_known_page, latest_page):
         """Alerts the users of a new page!"""
         channel = self.bot.get_channel(cfg.alert_channel)
         new_page_role = discord.utils.get(channel.guild.roles, id=cfg.new_page_role)
