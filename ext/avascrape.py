@@ -17,19 +17,20 @@ class AvaScrape(Cog):
         super().__init__(bot)
         self.scrape_days = [2, 3, 4]
         self.ready = False
+        self.loop_task = None
 
     async def on_ready(self):
         if self.ready:
             return False
         self.ready = True
-        await self.looper()
+        self.loop_task = self.bot.loop.create_task(self.looper())
         return
 
     async def looper(self):
-        if datetime.today().weekday() in self.scrape_days:
-            await self.scrape()
-
-        self.bot.loop.call_later(3600, self.looper)
+        while True:
+            if datetime.today().weekday() in self.scrape_days:
+                await self.scrape()
+            await asyncio.sleep(3600)
 
     @commands.command(alises=["scrape", "scr"])
     @commands.is_owner()
@@ -101,6 +102,10 @@ class AvaScrape(Cog):
 
         action_message = "Subscribed to" if subscribed else "Unsubscribed from"
         return await ctx.send(f"{action_message} page updates!")
+
+    def __unload(self):
+        if self.loop_task:
+            self.loop_task.cancel()
 
 def setup(bot):
     bot.add_cog(AvaScrape(bot))

@@ -319,6 +319,9 @@ class Admin(Cog):
         await ctx.send("oof.")
         await self.bot.r_connection.close()
         await self.bot.session.close()
+        for ext in list(self.bot.extensions):
+            print(ext)
+            self.bot.unload_extension(ext)
         await ctx.bot.logout()
 
     @commands.command()

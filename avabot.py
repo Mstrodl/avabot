@@ -1,4 +1,5 @@
 import logging
+import os
 
 import aiohttp
 import rethinkdb as r
@@ -28,6 +29,7 @@ class AvaBot(commands.Bot):
                 print(f"Loading {cog_name}")
                 self.load_extension(f"ext.{cog_name}")
             except Exception as err:
+                print(err)
                 logging.error(f"Failed to load {cog_name}!!11!!11!!!11")
 
     async def _db_connect(self):
@@ -36,7 +38,7 @@ class AvaBot(commands.Bot):
         self.r_connection = conn
         
 ava = AvaBot(
-    command_prefix="av!",
+    command_prefix="av!" if os.environ.get("pm_id") else "wr!",
     description="A bot that scrapes avasdemon.com for updates and announces them to people opted in!",
     pm_help=None
 )
