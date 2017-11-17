@@ -19,8 +19,14 @@ class AvaRSS(Cog):
         self.last_known_page = int(self.file_handle.read()) or 0
         self.reencode_parser = lxml.etree.XMLParser(encoding="utf-8")
         self.check_loop = None
+        self.ready = False
+        if self.bot.is_ready():
+            self.on_ready()
 
     async def on_ready(self):
+        if self.ready:
+            return self.bot.logger.debug("Bot already ready, not initialising loop again...")
+
         self.bot.logger.info("Bot ready!")
         async def run_check():
             while True:
