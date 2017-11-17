@@ -67,28 +67,30 @@ class AvaRSS(Cog):
         oldest_page_n = oldest_page["number"]
         oldest_page_link = oldest_page["link"]
         for guild in self.bot.guilds:
-            self.bot.logger.debug(f"Announcing new page in {guild.name}")
-            guild_config = await self.find_guild_config(guild)
-            self.bot.logger.debug(f"Got guild config for {guild.name}")
-            channel = guild.get_channel(guild_config["channel_id"])
-            new_page_role = discord.utils.get(guild.roles,
-                                              id=guild_config.get("role_id")) if guild_config.get("role_id") else None
-
-            self.bot.logger.debug(f"Got past role part for {guild.name}")
-
-            if self.bot.prod and new_page_role: await new_page_role.edit(mentionable=True,
-                                                                         reason="New page!")
-            elif new_page_role: await new_page_role.edit(mentionable=False,
-                                                         reason="Local bot, new page without ping")
-            role_mention_str = new_page_role.mention if new_page_role else ""
-            await channel.send(f"{role_mention_str} More Ava's demon pages!!\n"
-                               f"Pages {oldest_page_n}-{newest_page_n} were just released"
-                               f"({newest_page_n - oldest_page_n} pages)!\n"
-                               f"View: {oldest_page_link}")
-            
-            if self.bot.prod and new_page_role: await new_page_role.edit(mentionable=False,
-                                                                         reason="New page!")
-
+            try:
+                self.bot.logger.debug(f"Announcing new page in {guild.name}")
+                guild_config = await self.find_guild_config(guild)
+                self.bot.logger.debug(f"Got guild config for {guild.name}")
+                channel = guild.get_channel(guild_config["channel_id"])
+                new_page_role = discord.utils.get(guild.roles,
+                                                  id=guild_config.get("role_id")) if guild_config.get("role_id") else None
+                
+                self.bot.logger.debug(f"Got past role part for {guild.name}")
+                
+                if self.bot.prod and new_page_role: await new_page_role.edit(mentionable=True,
+                                                                             reason="New page!")
+                elif new_page_role: await new_page_role.edit(mentionable=False,
+                                                             reason="Local bot, new page without ping")
+                role_mention_str = new_page_role.mention if new_page_role else ""
+                await channel.send(f"{role_mention_str} More Ava's demon pages!!\n"
+                                   f"Pages {oldest_page_n}-{newest_page_n} were just released"
+                                   f"({newest_page_n - oldest_page_n} pages)!\n"
+                                   f"View: {oldest_page_link}")
+                
+                if self.bot.prod and new_page_role: await new_page_role.edit(mentionable=False,
+                                                                             reason="New page!")
+            except discord.DiscordException as err:
+                self.bot.logger.warning(f"Discord threw an error when we announced in {guild.name}: {err}")
 
     @commands.group()
     @commands.guild_only()
