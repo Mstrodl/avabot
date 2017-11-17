@@ -57,25 +57,103 @@ class AvaRSS(Cog):
 
     async def announce_pages(self, oldest_page, newest_page):
         """Alerts the users of a new page!"""
-        channel = self.bot.get_channel(cfg.alert_channel)
         newest_page_n = newest_page["number"]
         oldest_page_n = oldest_page["number"]
         oldest_page_link = oldest_page["link"]
-        new_page_role = discord.utils.get(channel.guild.roles,
-                                          id=cfg.new_page_role)
+        for guild in self.bot.guilds:
+            self.bot.logger.debug(f"Announcing new page in {guild.name}")
+            guild_config = await self.find_guild_config(guild)
+            self.bot.logger.debug(f"Got guild config for {guild.name}")
+            channel = guild.get_channel(guild_config["channel_id"])
+            new_page_role = discord.utils.get(guild.roles,
+                                              id=guild_config.get("role_id")) if guild_config.get("role_id") else None
 
-        if self.bot.prod: await new_page_role.edit(mentionable=True,
-                                                   reason="New page!")
-        else: await new_page_role.edit(mentionable=False,
-                                       reason="Local bot, new page without ping")
+            self.bot.logger.debug(f"Got past role part for {guild.name}")
+
+            if self.bot.prod and new_page_role: await new_page_role.edit(mentionable=True,
+                                                                         reason="New page!")
+            elif new_page_role: await new_page_role.edit(mentionable=False,
+                                                         reason="Local bot, new page without ping")
+            role_mention_str = new_page_role.mention if new_page_role else ""
+            await channel.send(f"{role_mention_str} More Ava's demon pages!!\n"
+                               f"Pages {oldest_page_n}-{newest_page_n} were just released"
+                               f"({newest_page_n - oldest_page_n} pages)!\n"
+                               f"View: {oldest_page_link}")
+            
+            if self.bot.prod and new_page_role: await new_page_role.edit(mentionable=False,
+                                                                         reason="New page!")
+
+
+    @commands.group()
+    @commands.guild_only()
+    async def settings(self, ctx):
+        """Change settings
+
+        Change settings like where updates are posted and the role it pings (if any)
+        """
+        pass
+
+    @settings.command()
+    @commands.has_permissions(manage_roles=True)
+    async def role(self, ctx, new_role: commands.RoleConverter = None):
+        """Set role to ping on updates (can be assigned with "subscribe" command)"""
+        await self.update_guild_config(ctx.guild, {
+            "role_id": new_role.id if new_role else None
+        })
+        role_str = f"`{new_role.name}`" if new_role else "nobody"
+        return await ctx.send(f"Done! I will now ping {role_str} whenever there's an update!")
+
+    @settings.command()
+    @commands.has_permissions(manage_channels=True)
+    async def channel(self, ctx, new_channel: commands.TextChannelConverter):
+        """Set channel to send updates to"""
+        if not new_channel:
+            raise MissingRequiredArgument("new_channel")
+
+        await self.update_guild_config(ctx.guild, {
+            "channel_id": new_channel.id
+        })
         
-        await channel.send(f"{new_page_role.mention} Henlo bitches! More Ava's demon pages!!1111!!!11!!!\n"
-                           f"Pages {oldest_page_n}-{newest_page_n} were just released"
-                           f"({newest_page_n - oldest_page_n} pages)!\n"
-                           f"View: {oldest_page_link}")
-        
-        if self.bot.prod: await new_page_role.edit(mentionable=False,
-                                                   reason="New page!")
+        return await ctx.send(f"Done! I will now post in {new_channel.name} whenever there's an update!")
+
+    async def update_guild_config(self, guild, new_config):
+        res = await self.bot.r.table("guilds").get(str(guild.id)).run()
+        if not res:
+            res = {}
+
+        return await self.bot.r.table("guilds").insert({
+            "id": str(guild.id),
+            "channel_id": str(new_config.get("channel_id") or res.get("channel_id")) if new_config.get("channel_id") or res.get("channel_id") else None,
+            "role_id": str(new_config.get("role_id") or res.get("role_id")) if new_config.get("role_id") or res.get("role_id") else None
+        }, conflict="update").run()
+
+    async def find_guild_config(self, guild):
+        self.bot.logger.debug(f"Finding guild config for {guild}")
+        res = await self.bot.r.table("guilds").get(str(guild.id)).run()
+        if not res:
+            self.bot.logger.debug(f"No guild config for {guild.name}, generating and saving!")
+            res = {
+                "id": str(guild.id),
+                "channel_id": 0,
+                "role_id": 0
+            }
+            await self.bot.r.table("guilds").insert(res).run()
+            self.bot.logger.debug(f"Inserted guild config for {guild.name}")
+        if not res.get("channel_id") or not guild.get_channel(int(res["channel_id"])):
+            self.bot.logger.debug(f"No channel for {guild.name}!")
+            # This insanity chooses the top guild (based on position) we have permission to send messages in
+            res["channel_id"] = sorted([chan for chan in guild.channels if isinstance(chan, discord.abc.Messageable) and chan.permissions_for(guild.me).send_messages], key=lambda channel: channel.position)[0].id
+        if res.get("role_id") and not discord.utils.get(guild.roles, id=int(res["role_id"] or 0)):
+            self.bot.logger.debug(f"No role for {guild.name}!")
+            res["role_id"] = None
+
+        self.bot.logger.debug(f"Response created for {guild.name}")
+
+        return {
+            "id": guild.id,
+            "channel_id": int(res.get("channel_id")),
+            "role_id": int(res.get("role_id")) if res.get("role_id") else None
+        }
 
     @commands.command()
     @commands.is_owner()
