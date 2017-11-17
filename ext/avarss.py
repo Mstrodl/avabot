@@ -173,7 +173,11 @@ class AvaRSS(Cog):
     async def subscribe(self, ctx):
         """Subscribes/Unsubscribes from page updates"""
         channel = self.bot.get_channel(cfg.alert_channel)
-        new_page_role = discord.utils.get(channel.guild.roles, id=cfg.new_page_role)
+        guild_config = await find_guild_config(ctx.guild)
+        if not guild_config.get("role_id"):
+            return awaut ctx.send(f"No role is configured for this server! Use `{ctx.prefix}settings role` to set one!")
+
+        new_page_role = discord.utils.get(channel.guild.roles, id=guild_config["role_id"])
 
         if not new_page_role in ctx.author.roles:
             await ctx.author.add_roles(new_page_role, reason="Subscribed to page updates", atomic=True)
