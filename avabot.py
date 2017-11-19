@@ -1,6 +1,7 @@
 import logging
 import os
 import asyncio
+import time
 
 import aiohttp
 import rethinkdb as r
@@ -21,6 +22,8 @@ class AvaBot(commands.Bot):
         logging.basicConfig(format="[%(levelname)s] - %(message)s", level=logging.INFO if self.prod else logging.DEBUG)
         self.logger = logging.getLogger("avabot")
         self.session = aiohttp.ClientSession(loop=self.loop)
+        self.start_time = int(round(time.time() * 1000))
+        self.uptime = lambda: int(round(time.time() * 1000) - self.start_time)
 
         # We only need to connect to rethink once...
         self.r = r
