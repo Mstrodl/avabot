@@ -173,7 +173,7 @@ class AvaRSS(Cog):
     async def subscribe(self, ctx):
         """Subscribes/Unsubscribes from page updates"""
         channel = self.bot.get_channel(cfg.alert_channel)
-        guild_config = await find_guild_config(ctx.guild)
+        guild_config = await self.find_guild_config(ctx.guild)
         if not guild_config.get("role_id"):
             return await ctx.send(f"No role is configured for this server! Use `{ctx.prefix}settings role` to set one!")
 
