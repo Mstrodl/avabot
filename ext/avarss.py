@@ -175,7 +175,7 @@ class AvaRSS(Cog):
         channel = self.bot.get_channel(cfg.alert_channel)
         guild_config = await find_guild_config(ctx.guild)
         if not guild_config.get("role_id"):
-            return awaut ctx.send(f"No role is configured for this server! Use `{ctx.prefix}settings role` to set one!")
+            return await ctx.send(f"No role is configured for this server! Use `{ctx.prefix}settings role` to set one!")
 
         new_page_role = discord.utils.get(channel.guild.roles, id=guild_config["role_id"])
 

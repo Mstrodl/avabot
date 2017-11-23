@@ -153,31 +153,6 @@ class Admin(Cog):
                 except aiohttp.ClientError:
                     await ctx.send("oof")
 
-
-    @commands.command(hidden=True)
-    @commands.is_owner()
-    async def retry(self, ctx):
-        """ Retries the previously executed Python code. """
-        if not self.previous_code:
-            return await ctx.send("No previous code.")
-
-        await self.execute(ctx, self.previous_code)
-
-
-    @commands.command(name="eval", aliases=["debug"])
-    @commands.is_owner()
-    async def _eval(self, ctx, *, code: str):
-        """ Executes Python code. """
-
-        # remove any markup that might be in the message
-        # TODO: converter
-        code = strip_code_markup(code)
-
-        # store previous code
-        self.previous_code = code
-
-        await self.execute(ctx, code)
-
     @commands.command(hidden=True)
     async def repl(self, ctx):
         """Launches an interactive REPL session."""

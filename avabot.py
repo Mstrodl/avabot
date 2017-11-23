@@ -2,9 +2,11 @@ import logging
 import os
 import asyncio
 import time
+import traceback
 
 import aiohttp
 import rethinkdb as r
+import discord
 from discord.ext import commands
 
 import avaconfig as cfg
@@ -12,7 +14,8 @@ import avaconfig as cfg
 cog_list = [
     "admin",
     "basic",
-    "avarss"
+    "avarss",
+    "exec"
 ]
 
 class AvaBot(commands.Bot):
@@ -82,6 +85,8 @@ class AvaBot(commands.Bot):
             # form a good human-readable message
             header = f"Command error: {type(ex.original).__name__}: {ex.original}"
             message = header + "\n" + str(tb)
+
+            await ctx.send(f"oof ```py\n{tb}\n```")
 
             self.dispatch("uncaught_command_invoke_error", ex.original, (message, tb, ctx))
             self.logger.error(message)
