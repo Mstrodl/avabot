@@ -58,6 +58,10 @@ class AvaRSS(Cog):
                     new_pages = [page for page in pages if page["number"] > self.last_known_page]
                     await self.announce_pages(new_pages[-1], new_pages[0])
                     self.last_known_page = pages[0]["number"]
+                    # Write back our stuff
+                    self.file_handle.seek(0)
+                    self.file_handle.write(str(self.last_known_page))
+                    self.file_handle.truncate()
             else:
                 raise RSSException(original_text)
 
