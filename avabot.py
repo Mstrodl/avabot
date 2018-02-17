@@ -14,7 +14,7 @@ import avaconfig as cfg
 cog_list = [
     "admin",
     "basic",
-    "avarss",
+    "modular",
     "exec"
 ]
 
@@ -93,7 +93,7 @@ class AvaBot(commands.Bot):
            
 ava = AvaBot(
     command_prefix="av!" if os.environ.get("pm_id") else "wr!",
-    description="A bot that scrapes avasdemon.com for updates and announces them to people opted in!",
+    description="A bot that scrapes various webcomics for updates and announces them to people opted in!",
     pm_help=None
 )
 

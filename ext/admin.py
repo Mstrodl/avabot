@@ -306,7 +306,7 @@ class Admin(Cog):
         try:
             self.bot.load_extension(f"ext.{cog}")
         except Exception as e:
-            await ctx.send(f"**`ERROR:`** {type(e).__name__} - {e}")
+            await ctx.send(f"**`ERROR:`** ```py\n{traceback.format_exc()}\n``` - {e}")
         else:
             await ctx.send("**`SUCCESS`**")
 
@@ -318,7 +318,7 @@ class Admin(Cog):
         try:
             self.bot.unload_extension(f"ext.{cog}")
         except Exception as e:
-            await ctx.send(f"**`ERROR:`** {type(e).__name__} - {e}")
+            await ctx.send(f"**`ERROR:`** ```py\n{traceback.format_exc()}\n``` - {e}")
         else:
             await ctx.send("**`SUCCESS`**")
 
@@ -334,7 +334,7 @@ class Admin(Cog):
             self.bot.unload_extension(f"ext.{cog}")
             self.bot.load_extension(f"ext.{cog}")
         except Exception as e:
-            await ctx.send(f"**`ERROR:`** {type(e).__name__} - {e}")
+            await ctx.send(f"**`ERROR:`** ```py\n{traceback.format_exc()}\n``` - {e}")
         else:
             await ctx.send("**`SUCCESS`**")
 
