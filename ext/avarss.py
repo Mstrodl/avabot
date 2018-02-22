@@ -10,6 +10,7 @@ from discord.ext import commands
 import avaconfig as cfg
 from .common import Cog
 
+
 class AvaRSS(Cog):
     """Updates users when new Ava's Demon pages are released"""
 
@@ -25,14 +26,16 @@ class AvaRSS(Cog):
 
     async def on_ready(self):
         if self.ready:
-            return self.bot.logger.debug("Bot already ready, not initialising loop again...")
+            return self.bot.logger.debug(
+                "Bot already ready, not initialising loop again...")
 
         self.bot.logger.info("Bot ready!")
+
         async def run_check():
             while True:
                 self.bot.logger.info("Checking RSS automatically...")
                 await self.check_rss()
-                await asyncio.sleep(5 * 60) # Check RSS every 5 min
+                await asyncio.sleep(5 * 60)  # Check RSS every 5 min
         self.check_loop = self.bot.loop.create_task(run_check())
 
     async def check_rss(self):
@@ -41,11 +44,15 @@ class AvaRSS(Cog):
             original_text = await resp.text()
             if resp.status == 200:
                 self.bot.logger.info("Downloaded RSS feed successfully!")
-                # Ugh, we have to re-encode it because they have an encoding declaration... See: http://lxml.de/parsing.html#python-unicode-strings
+                # Ugh, we have to re-encode it because they have an encoding
+                # declaration... See:
+                # http://lxml.de/parsing.html#python-unicode-strings
                 text_reencoded = original_text.encode("utf-8")
-                parsed = lxml.etree.fromstring(text_reencoded, parser=self.reencode_parser)
+                parsed = lxml.etree.fromstring(
+                    text_reencoded, parser=self.reencode_parser)
                 links = parsed.cssselect("rss channel item link")
-                # This looks confusing, but what we do here is like map() but that might be removed at some point?
+                # This looks confusing, but what we do here is like map() but
+                # that might be removed at some point?
                 pages = [{
                     "number": self.parse_number(page_link.text),
                     "link": page_link.text
@@ -55,7 +62,8 @@ class AvaRSS(Cog):
                     self.bot.logger.info("No new pages")
                 else:
                     self.bot.logger.info("Found a new page!")
-                    new_pages = [page for page in pages if page["number"] > self.last_known_page]
+                    new_pages = [
+                        page for page in pages if page["number"] > self.last_known_page]
                     await self.announce_pages(new_pages[-1], new_pages[0])
                     self.last_known_page = pages[0]["number"]
                     # Write back our stuff
@@ -76,25 +84,29 @@ class AvaRSS(Cog):
                 guild_config = await self.find_guild_config(guild)
                 self.bot.logger.debug(f"Got guild config for {guild.name}")
                 channel = guild.get_channel(guild_config["channel_id"])
-                new_page_role = discord.utils.get(guild.roles,
-                                                  id=guild_config.get("role_id")) if guild_config.get("role_id") else None
-                
+                new_page_role = discord.utils.get(guild.roles, id=guild_config.get(
+                    "role_id")) if guild_config.get("role_id") else None
+
                 self.bot.logger.debug(f"Got past role part for {guild.name}")
-                
-                if self.bot.prod and new_page_role: await new_page_role.edit(mentionable=True,
-                                                                             reason="New page!")
-                elif new_page_role: await new_page_role.edit(mentionable=False,
-                                                             reason="Local bot, new page without ping")
+
+                if self.bot.prod and new_page_role:
+                    await new_page_role.edit(mentionable=True,
+                                             reason="New page!")
+                elif new_page_role:
+                    await new_page_role.edit(mentionable=False,
+                                             reason="Local bot, new page without ping")
                 role_mention_str = new_page_role.mention if new_page_role else ""
                 await channel.send(f"{role_mention_str} More Ava's demon pages!!\n"
                                    f"Pages {oldest_page_n}-{newest_page_n} were just released"
                                    f"({newest_page_n - oldest_page_n} pages)!\n"
                                    f"View: {oldest_page_link}")
-                
-                if self.bot.prod and new_page_role: await new_page_role.edit(mentionable=False,
-                                                                             reason="New page!")
+
+                if self.bot.prod and new_page_role:
+                    await new_page_role.edit(mentionable=False,
+                                             reason="New page!")
             except discord.DiscordException as err:
-                self.bot.logger.warning(f"Discord threw an error when we announced in {guild.name}: {err}")
+                self.bot.logger.warning(
+                    f"Discord threw an error when we announced in {guild.name}: {err}")
 
     @commands.group()
     @commands.guild_only()
@@ -125,7 +137,7 @@ class AvaRSS(Cog):
         await self.update_guild_config(ctx.guild, {
             "channel_id": new_channel.id
         })
-        
+
         return await ctx.send(f"Done! I will now post in {new_channel.name} whenever there's an update!")
 
     async def update_guild_config(self, guild, new_config):
@@ -143,7 +155,8 @@ class AvaRSS(Cog):
         self.bot.logger.debug(f"Finding guild config for {guild}")
         res = await self.bot.r.table("guilds").get(str(guild.id)).run()
         if not res:
-            self.bot.logger.debug(f"No guild config for {guild.name}, generating and saving!")
+            self.bot.logger.debug(
+                f"No guild config for {guild.name}, generating and saving!")
             res = {
                 "id": str(guild.id),
                 "channel_id": 0,
@@ -151,11 +164,20 @@ class AvaRSS(Cog):
             }
             await self.bot.r.table("guilds").insert(res).run()
             self.bot.logger.debug(f"Inserted guild config for {guild.name}")
-        if not res.get("channel_id") or not guild.get_channel(int(res["channel_id"])):
+        if not res.get("channel_id") or not guild.get_channel(
+                int(res["channel_id"])):
             self.bot.logger.debug(f"No channel for {guild.name}!")
-            # This insanity chooses the top guild (based on position) we have permission to send messages in
-            res["channel_id"] = sorted([chan for chan in guild.channels if isinstance(chan, discord.abc.Messageable) and chan.permissions_for(guild.me).send_messages], key=lambda channel: channel.position)[0].id
-        if res.get("role_id") and not discord.utils.get(guild.roles, id=int(res["role_id"] or 0)):
+            # This insanity chooses the top guild (based on position) we have
+            # permission to send messages in
+            res["channel_id"] = sorted(
+                [
+                    chan for chan in guild.channels if isinstance(
+                        chan,
+                        discord.abc.Messageable) and chan.permissions_for(
+                        guild.me).send_messages],
+                key=lambda channel: channel.position)[0].id
+        if res.get("role_id") and not discord.utils.get(
+                guild.roles, id=int(res["role_id"] or 0)):
             self.bot.logger.debug(f"No role for {guild.name}!")
             res["role_id"] = None
 
@@ -181,9 +203,10 @@ class AvaRSS(Cog):
         if not guild_config.get("role_id"):
             return await ctx.send(f"No role is configured for this server! Use `{ctx.prefix}settings role` to set one!")
 
-        new_page_role = discord.utils.get(channel.guild.roles, id=guild_config["role_id"])
+        new_page_role = discord.utils.get(
+            channel.guild.roles, id=guild_config["role_id"])
 
-        if not new_page_role in ctx.author.roles:
+        if new_page_role not in ctx.author.roles:
             await ctx.author.add_roles(new_page_role, reason="Subscribed to page updates", atomic=True)
             subscribed = True
         else:

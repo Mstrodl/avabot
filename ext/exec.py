@@ -51,7 +51,13 @@ IMPLICIT_RETURN_STOP_WORDS = {
 
 
 class Code(Converter):
-    def __init__(self, *, wrap_code=False, strip_ticks=True, indent_width=4, implicit_return=False):
+    def __init__(
+            self,
+            *,
+            wrap_code=False,
+            strip_ticks=True,
+            indent_width=4,
+            implicit_return=False):
         """
         A converter that extracts code out of code blocks and inline code formatting.
 
@@ -91,9 +97,11 @@ class Code(Converter):
 
             # if the last line isn't indented and not returning, add it
             first_word = last_line.strip().split(' ')[0]
-            no_stop = all(first_word != word for word in IMPLICIT_RETURN_STOP_WORDS)
+            no_stop = all(
+                first_word != word for word in IMPLICIT_RETURN_STOP_WORDS)
             if not last_line[4:].startswith(' ') and no_stop:
-                last_line = (' ' * self.indent_width) + 'return ' + last_line[4:]
+                last_line = (' ' * self.indent_width) + \
+                    'return ' + last_line[4:]
 
             result = '\n'.join(result.splitlines()[:-1] + [last_line])
 
@@ -105,7 +113,8 @@ def format_syntax_error(e: SyntaxError) -> str:
     if e.text is None:
         return '```py\n{0.__class__.__name__}: {0}\n```'.format(e)
     # display a nice arrow
-    return '```py\n{0.text}{1:>{0.offset}}\n{2}: {0}```'.format(e, '^', type(e).__name__)
+    return '```py\n{0.text}{1:>{0.offset}}\n{2}: {0}```'.format(
+        e, '^', type(e).__name__)
 
 
 class Exec(Cog):
@@ -126,7 +135,10 @@ class Exec(Cog):
             return await ctx.send(*args, **kwargs)
 
         def better_dir(*args, **kwargs) -> List[str]:
-            return [n for n in dir(*args, **kwargs) if not n.endswith('__') and not n.startswith('__')]
+            return [
+                n for n in dir(
+                    * args,
+                    **kwargs) if not n.endswith('__') and not n.startswith('__')]
 
         env = {
             'bot': ctx.bot,

@@ -61,7 +61,8 @@ def format_syntax_error(e: SyntaxError) -> str:
     if e.text is None:
         return "```py\n{0.__class__.__name__}: {0}\n```".format(e)
     # display a nice arrow
-    return "```py\n{0.text}{1:>{0.offset}}\n{2}: {0}```".format(e, "^", type(e).__name__)
+    return "```py\n{0.text}{1:>{0.offset}}\n{2}: {0}```".format(
+        e, "^", type(e).__name__)
 
 
 class Admin(Cog):
@@ -128,7 +129,7 @@ class Admin(Cog):
             # something went wrong
             try:
                 await ctx.message.add_reaction("\N{EXCLAMATION QUESTION MARK}")
-            except:
+            except BaseException:
                 pass
             stream = stdout.getvalue()
             await ctx.send("```py\n{}{}\n```".format(stream, traceback.format_exc()))
@@ -138,9 +139,10 @@ class Admin(Cog):
 
             try:
                 await ctx.message.add_reaction("\N{HUNDRED POINTS SYMBOL}")
-            except:
+            except BaseException:
                 # couldn"t add the reaction, ignore
-                log.warning("Failed to add reaction to eval message, ignoring.")
+                log.warning(
+                    "Failed to add reaction to eval message, ignoring.")
 
             try:
                 self.last_result = self.last_result if ret is None else ret
@@ -176,8 +178,8 @@ class Admin(Cog):
 
         def check(m):
             return m.author.id == ctx.author.id and \
-                   m.channel.id == ctx.channel.id and \
-                   m.content.startswith("`")
+                m.channel.id == ctx.channel.id and \
+                m.content.startswith("`")
 
         while True:
             try:
@@ -251,17 +253,15 @@ class Admin(Cog):
             result = await run_subprocess(cmd)
         await ctx.send(f"```{result}```")
 
-
     @commands.command()
     @commands.is_owner()
     async def download(self, ctx, file):
         """Attaches a stored file"""
         with open(file, "rb") as f:
             try:
-                await ctx.send(file = discord.File(f, file))
+                await ctx.send(file=discord.File(f, file))
             except FileNotFoundError:
                 await ctx.send(f"no such file: {file}")
-
 
     @commands.command()
     @commands.is_owner()
@@ -310,7 +310,6 @@ class Admin(Cog):
         else:
             await ctx.send("**`SUCCESS`**")
 
-
     @commands.command()
     @commands.is_owner()
     async def unload(self, ctx, cog):
@@ -321,7 +320,6 @@ class Admin(Cog):
             await ctx.send(f"**`ERROR:`** ```py\n{traceback.format_exc()}\n``` - {e}")
         else:
             await ctx.send("**`SUCCESS`**")
-
 
     @commands.command(name="reload")
     @commands.is_owner()

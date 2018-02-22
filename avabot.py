@@ -18,11 +18,14 @@ cog_list = [
     "exec"
 ]
 
+
 class AvaBot(commands.Bot):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.prod = True if os.environ.get("pm_id") else False
-        logging.basicConfig(format="[%(levelname)s] - %(message)s", level=logging.INFO if self.prod else logging.DEBUG)
+        logging.basicConfig(
+            format="[%(levelname)s] - %(message)s",
+            level=logging.INFO if self.prod else logging.DEBUG)
         self.logger = logging.getLogger("avabot")
         self.session = aiohttp.ClientSession(loop=self.loop)
         self.start_time = int(round(time.time() * 1000))
@@ -80,7 +83,12 @@ class AvaBot(commands.Bot):
                 return await self.handle_forbidden(ctx)
 
             # get the traceback
-            tb = "".join(traceback.format_exception(type(ex.original), ex.original, ex.original.__traceback__))
+            tb = "".join(
+                traceback.format_exception(
+                    type(
+                        ex.original),
+                    ex.original,
+                    ex.original.__traceback__))
 
             # form a good human-readable message
             header = f"Command error: {type(ex.original).__name__}: {ex.original}"
@@ -88,14 +96,15 @@ class AvaBot(commands.Bot):
 
             await ctx.send(f"oof ```py\n{tb}\n```")
 
-            self.dispatch("uncaught_command_invoke_error", ex.original, (message, tb, ctx))
+            self.dispatch("uncaught_command_invoke_error",
+                          ex.original, (message, tb, ctx))
             self.logger.error(message)
-           
+
+
 ava = AvaBot(
     command_prefix="av!" if os.environ.get("pm_id") else "wr!",
     description="A bot that scrapes various webcomics for updates and announces them to people opted in!",
-    pm_help=None
-)
+    pm_help=None)
 
 print("oof!")
 ava.run(cfg.token)

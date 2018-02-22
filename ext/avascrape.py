@@ -10,6 +10,7 @@ from lxml import html
 import avaconfig as cfg
 from .common import Cog
 
+
 class AvaScrape(Cog):
     """Commands used to control the scraper"""
 
@@ -47,7 +48,8 @@ class AvaScrape(Cog):
             last_known_page = 0
         else:
             last_known_page = db_res["value"]
-        # We have to pass in extra headers otherwise we get served a tiny version without the data we need D:
+        # We have to pass in extra headers otherwise we get served a tiny
+        # version without the data we need D:
         res = await self.request("http://www.avasdemon.com/pages.php", {
             "Origin": "http://www.avasdemon.com",
             "Referer": "http://www.avasdemon.com/pages.php",
@@ -55,14 +57,18 @@ class AvaScrape(Cog):
         }, "page=0001")
         parsed = html.fromstring(res)
         # Select the latest page link
-        latestUrl = parsed.cssselect("img[src=\"latest.png\"]")[0].getparent().attrib["href"]
+        latestUrl = parsed.cssselect("img[src=\"latest.png\"]")[
+            0].getparent().attrib["href"]
         # Parse out the page id from the url's query parameter
-        latest_page = int(parse.parse_qs(parse.urlparse(latestUrl).query)["page"][0])
+        latest_page = int(
+            parse.parse_qs(
+                parse.urlparse(latestUrl).query)["page"][0])
         # If this is the same page we had before,
         if latest_page == last_known_page:
             return False
         else:
-            # Otherwise, there's a new page! Alert those that are subscribed! :D
+            # Otherwise, there's a new page! Alert those that are subscribed!
+            # :D
             self.bot.logger.info(f"Found new page")
             await self.alert_users(latest_page)
             await self.bot.r.table("data").update({
@@ -74,7 +80,8 @@ class AvaScrape(Cog):
     async def alert_users(self, last_known_page, latest_page):
         """Alerts the users of a new page!"""
         channel = self.bot.get_channel(cfg.alert_channel)
-        new_page_role = discord.utils.get(channel.guild.roles, id=cfg.new_page_role)
+        new_page_role = discord.utils.get(
+            channel.guild.roles, id=cfg.new_page_role)
         await new_page_role.edit(mentionable=True,
                                  reason="New page!")
         await channel.send(f"{new_page_role.mention} Henlo bitches! More Ava's demon pages!!1111!!!11!!!\n"
@@ -93,9 +100,10 @@ class AvaScrape(Cog):
     async def subscribe(self, ctx):
         """Subscribes/Unsubscribes from page updates"""
         channel = self.bot.get_channel(cfg.alert_channel)
-        new_page_role = discord.utils.get(channel.guild.roles, id=cfg.new_page_role)
+        new_page_role = discord.utils.get(
+            channel.guild.roles, id=cfg.new_page_role)
 
-        if not new_page_role in ctx.author.roles:
+        if new_page_role not in ctx.author.roles:
             await ctx.author.add_roles(new_page_role, reason="Subscribed to page updates", atomic=True)
             subscribed = True
         else:
@@ -108,6 +116,7 @@ class AvaScrape(Cog):
     def __unload(self):
         if self.loop_task:
             self.loop_task.cancel()
+
 
 def setup(bot):
     bot.add_cog(AvaScrape(bot))

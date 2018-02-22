@@ -4,6 +4,7 @@ from discord.ext import commands
 
 from .common import Cog
 
+
 class Basic(Cog):
     """Basic commands"""
 
@@ -16,6 +17,7 @@ class Basic(Cog):
         rtt = (t2 - t1) * 1000
         ws = self.bot.latency * 1000
         await m.edit(content=f"Pong! rtt: `{rtt:.1f}ms`, gateway: `{ws:.1f}ms`")
+
 
 def setup(bot):
     bot.add_cog(Basic(bot))

@@ -19,7 +19,7 @@ from discord.ext import commands
 import avaconfig as cfg
 from .common import Cog
 
-page_num_regex = r"((?:-|\d){3,5})" # Used to match page #s in RSS feed titles
+page_num_regex = r"((?:-|\d){3,5})"  # Used to match page #s in RSS feed titles
 parser = lxml.etree.XMLParser(encoding="utf-8")
 
 
@@ -28,13 +28,11 @@ async def http_req(url):
         async with session.get(url) as resp:
             return resp
 
+
 async def common_rss(comic):
     resp = await http_req(comic["rss_url"])
-    print("owo reply!")
-    print(resp.status)
     text = await resp.text()
-    print("owo we have a reply!!!")
-    print(text)
+
     if resp.status == 200:
         text_reencoded = text.encode("utf-8")
         parsed = lxml.etree.fromstring(text_reencoded, parser=parser)
@@ -55,7 +53,7 @@ async def common_rss(comic):
                 "time": time
             }
         }
-        
+
 webcomics = [
     {
         "slug": "twokinds",
@@ -83,6 +81,7 @@ webcomics = [
     }
 ]
 
+
 class Modular(Cog):
     """Updates users when new webcomics are released!"""
 
@@ -101,7 +100,7 @@ class Modular(Cog):
             while True:
                 self.bot.logger.info("Checking RSS automatically...")
                 await self.check_updates()
-                await asyncio.sleep(5 * 60) # Check RSS every 5 min
+                await asyncio.sleep(5 * 60)  # Check RSS every 5 min
         self.check_loop = self.bot.loop.create_task(run_check())
 
     def __unload(self):
@@ -119,7 +118,7 @@ class Modular(Cog):
             friendly_name = comic["friendly"]
             self.bot.logger.info(f"Checked for updates on {friendly_name}")
             announced_post = await self.bot.r.table("updates").get(comic["slug"]).run()
-            
+
             if announced_post and results["latest_post"]["unique_id"] == announced_post["unique_id"]:
                 self.bot.logger.info(f"No updates for {friendly_name}")
                 continue
@@ -139,7 +138,7 @@ class Modular(Cog):
         post_title = results["latest_post"]["title"]
         url = results["latest_post"]["url"]
         response = f"New panels for {friendly_name}! Latest panel:\n*{post_title}*\n<{url}>"
-        
+
         for channel in channels:
             if channel["role"]:
                 new_page_role = channel["role"]
@@ -148,7 +147,7 @@ class Modular(Cog):
                         await new_page_role.edit(
                             mentionable=True,
                             reason=f"New panels for {friendly_name} ({post_title})")
-                    else: # Safety precaution
+                    else:  # Safety precaution
                         await new_page_role.edit(
                             mentionable=False,
                             reason="Local bot, new page without ping")
@@ -177,28 +176,37 @@ class Modular(Cog):
                 self.bot.get_channel(int(subscription["channel_id"])).guild.roles,
                 id=int(subscription["role_id"]))
         } async for subscription in subscriptions
-                if self.bot.get_channel(int(subscription["channel_id"]))]
+            if self.bot.get_channel(int(subscription["channel_id"]))]
 
     @commands.command(aliases=["unsubscribe", "unsub", "sub"])
     async def subscribe(self, ctx, role: discord.Role=None):
         """Toggles your subscription to a webcomic"""
         if not role:
+            subscriptions = self.bot.r \
+            .table("subscriptions") \
+            .get_all(str(ctx.guild.id), index="guild_id").run()
+
             role_list = "\n".join([
-                f'{self.bot.get_channel(int(subscription["channel_id"])).mention} **{self.comic_dict[subscription["slug"]]["friendly"]}**: `{discord.utils.get(ctx.guild.roles, id=int(subscription["role_id"])).name}`'
-                async for subscription in await self.bot.r.table("subscriptions").get_all(str(ctx.guild.id), index="guild_id").run()
-                if subscription["role_id"] and discord.utils.get(ctx.guild.roles, id=int(subscription["role_id"]))
+                f'{self.bot.get_channel(int(subscription["channel_id"])).mention} '
+                f'**{self.comic_dict[subscription["slug"]]["friendly"]}**: '
+                f'`{discord.utils.get(ctx.guild.roles, id=int(subscription["role_id"])).name}`'
+                async for subscription in subscriptions 
+                if subscription["role_id"] and
+                discord.utils.get(ctx.guild.roles,
+                                  id=int(subscription["role_id"]))
             ])
             return await ctx.send(f"Available roles:\n"
                                   f"{role_list}")
+
         if role.guild.id != ctx.guild.id:
             return await ctx.send("Role not found")
-        
+
         allowed = await self.bot.r \
-        .table("subscriptions") \
-        .get_all(str(role.id), index="role_id") \
-        .count() \
-        .gt(0) \
-        .run()
+            .table("subscriptions") \
+            .get_all(str(role.id), index="role_id") \
+            .count() \
+            .gt(0) \
+            .run()
 
         if not allowed:
             return await ctx.send("Role not found")
@@ -209,7 +217,7 @@ class Modular(Cog):
         else:
             await ctx.author.add_roles(role)
             return await ctx.send("Subscribed!")
-        
+
     @commands.group()
     async def subscriptions(self, ctx):
         """Manage subscriptions"""
@@ -228,26 +236,26 @@ class Modular(Cog):
             header = "Subscriptions in this server"
 
         subscriptions = await self.bot.r \
-        .table("subscriptions") \
-        .filter(filter_dict) \
-        .run()
+            .table("subscriptions") \
+            .filter(filter_dict) \
+            .run()
         subscription_list = "\n".join([f'**{self.comic_dict[subscription["slug"]]["friendly"]}** {self.bot.get_channel(int(subscription["channel_id"])).mention}' +
                                        ((" " +
                                          discord.utils.get(
                                              self.bot.get_channel(int(subscription["channel_id"])).guild.roles,
                                              id=int(subscription["role_id"])).name)
                                         if subscription["role_id"] and discord.utils.get(
-                                                self.bot.get_channel(int(subscription["channel_id"])).guild.roles,
-                                                id=int(subscription["role_id"])) else "")
+                                           self.bot.get_channel(int(subscription["channel_id"])).guild.roles,
+                                           id=int(subscription["role_id"])) else "")
                                        async for subscription in subscriptions if self.bot.get_channel(int(subscription["channel_id"]))])
-        
+
         await ctx.send(f"**{header}**\n"
                        f"{subscription_list}")
 
     @subscriptions.command()
     async def remove(self, ctx, slug: str, channel: discord.TextChannel):
         """Removes subscription for a channel."""
-        if not slug in self.comic_slugs:
+        if slug not in self.comic_slugs:
             return await ctx.send("Comic not found!")
         if channel.guild.id != ctx.guild.id:
             return await ctx.send("Channel not found!")
@@ -270,9 +278,9 @@ class Modular(Cog):
             return await ctx.send("Channel not found!")
         if role and role.guild.id != ctx.guild.id:
             return await ctx.send("Role not found!")
-        if not slug in self.comic_slugs:
+        if slug not in self.comic_slugs:
             return await ctx.send("Comic not found!")
-        
+
         sub_dict = {
             "channel_id": str(channel.id),
             "guild_id": str(ctx.guild.id),
@@ -287,9 +295,9 @@ class Modular(Cog):
     @commands.command()
     async def list(self, ctx):
         """Shows list of available webcomics and their slugs"""
-        res = "\n".join([f'**{webcomic["friendly"]}**: {webcomic["slug"]}' for webcomic in webcomics])
+        res = "\n".join(
+            [f'**{webcomic["friendly"]}**: {webcomic["slug"]}' for webcomic in webcomics])
         return await ctx.send(res)
-        
 
     @commands.command()
     async def recheck_all(self, ctx):
