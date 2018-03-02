@@ -298,7 +298,7 @@ class Modular(Cog):
              f"{subscription_list}")
 
   @subscriptions.command()
-  @commands.has_permissions(administator=True)
+  @commands.has_permissions(administrator=True)
   async def remove(self, ctx, slug: str, channel: discord.TextChannel):
     """Removes subscription for a channel."""
     if slug not in self.comic_slugs:
@@ -318,7 +318,7 @@ class Modular(Cog):
       return await ctx.send("Removed!")
 
   @subscriptions.command()
-  @commands.has_permissions(administator=True)
+  @commands.has_permissions(administrator=True)
   async def add(self, ctx, slug: str, channel: discord.TextChannel, role: discord.Role=None):
     """Adds a subscription for a channel"""
     if not channel or channel.guild.id != ctx.guild.id:
