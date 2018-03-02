@@ -11,7 +11,10 @@ import aiohttp
 import lxml.html
 import rethinkdb as r
 import dateutil.parser
+import datetime
 import lxml.etree
+import lxml.html
+import urllib.parse
 from discord.ext import commands
 
 from .common import Cog
@@ -20,9 +23,13 @@ page_num_regex = r"((?:-|\d){3,5})"  # Used to match page #s in RSS feed titles
 parser = lxml.etree.XMLParser(encoding="utf-8")
 
 
-async def http_req(url):
+class BadPage(Exception):
+  pass
+
+async def http_req(url, headers={}, body=None):
   async with aiohttp.ClientSession() as session:
-    async with session.get(url) as resp:
+    chosen_req = session.post if body else session.get
+    async with chosen_req(url, headers=headers, data=body) as resp:
       return resp
 
 
@@ -36,7 +43,10 @@ async def common_rss(comic):
     post = parsed.cssselect("rss channel item")[0]
     title = post.cssselect("title")[0].text
     url = post.cssselect("link")[0].text
-    page_num = re.search(page_num_regex, title).group(1)
+    page_num_search = re.search(page_num_regex, title)
+    if not page_num_search:
+      raise BadPage(f"No unique ID found for page title: '{title}'")
+    page_num = page_num_search.group(1)
     found_pubdate = post.cssselect("pubDate")
     if found_pubdate:
       time = dateutil.parser.parse(found_pubdate[0].text)
@@ -51,12 +61,46 @@ async def common_rss(comic):
       }
     }
 
+# Ava's Demon scraper because the she doesn't update RSS as soon...
+async def avasdemon_scrape(comic):
+  resp = await http_req(f'{comic["base_url"]}/pages.php', {
+    "Origin": comic["base_url"],
+    "Referer": f'{comic["base_url"]}/pages.php',
+    "Content-Type": "application/x-www-form-urlencoded"
+  }, "page=0001")
+  text = await resp.text()
+  xml_document = lxml.html.fromstring(text)
+  # Grab the newest page from the 'latest' button
+  latest_url = xml_document.cssselect("img[src=\"latest.png\"]")[0] \
+                           .getparent().attrib["href"]
+  
+  query_params = urllib.parse.parse_qs(urllib.parse.urlparse(latest_url).query)
+  page_num = query_params["page"][0]
+  return {
+    "latest_post": {
+      "unique_id": page_num,
+      "url": f'{comic["base_url"]}/{latest_url}',
+      "title": f"Page {page_num}",
+      "time": r.now()
+    }
+  }
+
+async def twitter_listener(user):
+  handle = comic["handle"] # User's Twitter handle
+  
+
 webcomics = [
   {
     "slug": "twokinds",
     "friendly": "Two Kinds",
     "check_updates": common_rss,
     "rss_url": "http://twokinds.keenspot.com/feed.xml"
+  },
+  {
+    "base_url": "http://avasdemon.com",
+    "friendly": "Ava's Demon",
+    "check_updates": avasdemon_scrape,
+    "slug": "avasdemon"
   },
   {
     "slug": "mylifewithfel",
@@ -69,13 +113,13 @@ webcomics = [
     "friendly": "Kill Six Billion Demons",
     "check_updates": common_rss,
     "rss_url": "https://killsixbilliondemons.com/feed/"
-  },
-  {
-    "slug": "avasdemon",
-    "friendly": "Ava's Demon",
-    "check_updates": common_rss,
-    "rss_url": "http://feeds.feedburner.com/AvasDemon?format=xml"
-  }
+  } # ,
+  # {
+  #   "slug": "avasdemon",
+  #   "friendly": "Ava's Demon",
+  #   "check_updates": common_rss,
+  #   "rss_url": "http://feeds.feedburner.com/AvasDemon?format=xml"
+  # }
 ]
 
 
@@ -106,13 +150,17 @@ class Modular(Cog):
   async def check_updates(self):
     for comic in webcomics:
       # haha yes we have the comics now we do their update hook!
+      friendly_name = comic["friendly"]
+      self.bot.logger.info(f"Fetching {friendly_name}")
       try:
         results = await comic["check_updates"](comic)
       except aiohttp.client_exceptions.ClientConnectionError as err:
-        self.bot.logger.error(err)
+        self.bot.logger.error(f"Error occurred while fetching {friendly_name}: {err}")
+        continue
+      except BadPage as err:
+        self.bot.logger.error(f"Error occurred while fetching {friendly_name}: {err}")
         continue
 
-      friendly_name = comic["friendly"]
       self.bot.logger.info(f"Checked for updates on {friendly_name}")
       announced_post = await self.bot.r.table("updates").get(comic["slug"]).run()
 
@@ -163,15 +211,15 @@ class Modular(Cog):
         except discord.Forbidden:
           pass
       else:
-        await channel.send(response)
+        await channel["channel"].send(response)
 
   async def get_channels(self, comic_slug):
     subscriptions = await self.bot.r.table("subscriptions").get_all(comic_slug, index="slug").run()
     return [{
       "channel": self.bot.get_channel(int(subscription["channel_id"])),
-      "role": discord.utils.get(
+      "role": (discord.utils.get(
         self.bot.get_channel(int(subscription["channel_id"])).guild.roles,
-        id=int(subscription["role_id"]))
+        id=int(subscription["role_id"])) if subscription["role_id"] else None) or None
     } async for subscription in subscriptions
       if self.bot.get_channel(int(subscription["channel_id"]))]
 
@@ -250,6 +298,7 @@ class Modular(Cog):
              f"{subscription_list}")
 
   @subscriptions.command()
+  @commands.has_permissions(administator=True)
   async def remove(self, ctx, slug: str, channel: discord.TextChannel):
     """Removes subscription for a channel."""
     if slug not in self.comic_slugs:
@@ -269,6 +318,7 @@ class Modular(Cog):
       return await ctx.send("Removed!")
 
   @subscriptions.command()
+  @commands.has_permissions(administator=True)
   async def add(self, ctx, slug: str, channel: discord.TextChannel, role: discord.Role=None):
     """Adds a subscription for a channel"""
     if not channel or channel.guild.id != ctx.guild.id:
@@ -297,6 +347,7 @@ class Modular(Cog):
     return await ctx.send(res)
 
   @commands.command()
+  @commands.is_owner()
   async def recheck_all(self, ctx):
     """Checks for updates to webcomics"""
     await self.check_updates()

@@ -23,6 +23,7 @@ class AvaBot(commands.Bot):
   def __init__(self, **kwargs):
     super().__init__(**kwargs)
     self.prod = True if os.environ.get("pm_id") else False
+
     logging.basicConfig(
       format="[%(levelname)s] - %(message)s",
       level=logging.INFO if self.prod else logging.DEBUG)
@@ -48,6 +49,13 @@ class AvaBot(commands.Bot):
     conn = await self.r.connect("localhost", 28015, "ava")
     conn.repl()
     self.r_connection = conn
+
+  async def on_message(self, message):
+    if not self.prod and not await self.is_owner(message.author):
+      return 
+    ctx = await self.get_context(message)
+    await self.invoke(ctx)
+      
 
   async def on_command_error(self, ctx, ex):
     # dog bot good go use it for things https://github.com/slice/dogbot
