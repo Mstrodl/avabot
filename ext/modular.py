@@ -6,6 +6,7 @@
 import asyncio
 import json
 import re
+import os
 
 import discord
 import aiohttp
@@ -22,6 +23,7 @@ from .common import Cog
 
 page_num_regex = r"((?:-|\d){3,5})"  # Used to match page #s in RSS feed titles
 parser = lxml.etree.XMLParser(encoding="utf-8")
+html_parser = lxml.html.HTMLParser(encoding="utf-8")
 
 
 class BadPage(Exception):
@@ -31,14 +33,17 @@ async def http_req(url, headers={}, body=None):
   async with aiohttp.ClientSession() as session:
     chosen_req = session.post if body else session.get
     async with chosen_req(url, headers=headers, data=body) as resp:
-      return resp
+      return {
+        "text": await resp.text(),
+        "resp": resp
+      }
 
 
 async def common_rss(comic):
   resp = await http_req(comic["rss_url"])
-  text = await resp.text()
+  text = resp["text"]
 
-  if resp.status == 200:
+  if resp["resp"].status == 200:
     text_reencoded = text.encode("utf-8")
     parsed = lxml.etree.fromstring(text_reencoded, parser=parser)
     post = parsed.cssselect("rss channel item")[0]
@@ -62,6 +67,28 @@ async def common_rss(comic):
       }
     }
 
+
+async def twokinds_scrape(comic):
+  resp = await http_req(comic["base_url"])
+  text = resp["text"]
+  text_reencoded = text.encode("utf-8")
+  xml_document = lxml.html.fromstring(text_reencoded, parser=html_parser)
+  # Grab the newest page from the 'latest' button
+  article_obj = xml_document.cssselect("article.comic")[0]
+  permalink_page = article_obj.cssselect("div.below-nav p.permalink a")[0]
+  permalink_url = permalink_page.attrib["href"]
+  title = article_obj.cssselect("img[alt=\"Comic Page\"]")[0].attrib["title"]
+  page_num = int(os.path.basename(os.path.split(permalink_url)[0]))
+  
+  return {
+    "latest_post": {
+      "unique_id": page_num,
+      "url": f'{comic["base_url"]}{permalink_url}',
+      "title": title,
+      "time": r.now()
+    }
+  }
+
 # Ava's Demon scraper because the she doesn't update RSS as soon...
 async def avasdemon_scrape(comic):
   resp = await http_req(f'{comic["base_url"]}/pages.php', {
@@ -69,7 +96,7 @@ async def avasdemon_scrape(comic):
     "Referer": f'{comic["base_url"]}/pages.php',
     "Content-Type": "application/x-www-form-urlencoded"
   }, "page=0001")
-  text = await resp.text()
+  text = resp["text"]
   xml_document = lxml.html.fromstring(text)
   # Grab the newest page from the 'latest' button
   latest_url = xml_document.cssselect("img[src=\"latest.png\"]")[0] \
@@ -89,7 +116,7 @@ async def avasdemon_scrape(comic):
 
 async def xkcd_fetch(comic):
   resp = await http_req(f'{comic["base_url"]}/info.0.json')
-  text = await resp.text()
+  text = resp["text"]
   page = json.loads(text)
   return {
     "latest_post": {
@@ -109,8 +136,8 @@ webcomics = [
   {
     "slug": "twokinds",
     "friendly": "Two Kinds",
-    "check_updates": common_rss,
-    "rss_url": "http://twokinds.keenspot.com/feed.xml"
+    "check_updates": twokinds_scrape,
+    "base_url": "http://twokinds.keenspot.com"
   },
   {
     "base_url": "http://avasdemon.com",
