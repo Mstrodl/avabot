@@ -224,7 +224,7 @@ class Modular(Cog):
       if self.bot.get_channel(int(subscription["channel_id"]))]
 
   @commands.command(aliases=["unsubscribe", "unsub", "sub"])
-  async def subscribe(self, ctx, role: discord.Role=None):
+  async def subscribe(self, ctx, *, role: discord.Role=None):
     """Toggles your subscription to a webcomic"""
     if not role:
       subscriptions = self.bot.r \
@@ -263,10 +263,10 @@ class Modular(Cog):
       await ctx.author.add_roles(role)
       return await ctx.send("Subscribed!")
 
-  @commands.group()
+  @commands.group(invoke_without_command=True)
   async def subscriptions(self, ctx):
     """Manage subscriptions"""
-    return
+    return await ctx.invoke(self.bot.get_command("help"), ctx.invoked_with)
 
   @subscriptions.command(name="list")
   async def subscriptions_list(self, ctx, channel: discord.TextChannel=None):
