@@ -26,7 +26,8 @@ class AvaBot(commands.Bot):
 
     logging.basicConfig(
       format="[%(levelname)s] - %(message)s",
-      level=logging.INFO if self.prod else logging.DEBUG)
+      level=logging.INFO if os.environ.get("LOG_INFO") else (
+        logging.INFO if self.prod else logging.DEBUG))
     self.logger = logging.getLogger("avabot")
     self.session = aiohttp.ClientSession(loop=self.loop)
     self.start_time = int(round(time.time() * 1000))
@@ -39,11 +40,10 @@ class AvaBot(commands.Bot):
 
     for cog_name in cog_list:
       try:
-        print(f"Loading {cog_name}")
+        self.logger.info(f"Loading {cog_name}")
         self.load_extension(f"ext.{cog_name}")
       except Exception as err:
-        print(err)
-        self.logger.error(f"Failed to load {cog_name}!!11!!11!!!11")
+        self.logger.error(f"Failed to load {cog_name}!! {err}")
 
   async def _db_connect(self):
     conn = await self.r.connect("localhost", 28015, "ava")
@@ -91,6 +91,35 @@ class AvaBot(commands.Bot):
     elif isinstance(error, commands.MissingRequiredArgument):
       return await ctx.send(f"{ctx.author.mention}: You gave incomplete "
                             f"arguments. {help_text}")
+    elif isinstance(error, commands.errors.CommandInvokeError):
+      if isinstance(error.original, discord.Forbidden):
+        if ctx.command.name == "help":
+          # can"t dm that person :(
+          try:
+            await ctx.send(f"i cant dm {ctx.author.mention}")
+          except discord.Forbidden:
+            pass
+          return
+        return await self.handle_forbidden(ctx)
+
+      # get the traceback
+      tb = "".join(
+        traceback.format_exception(
+          type(
+            error.original),
+          error.original,
+          error.original.__traceback__))
+
+      # form a good human-readable message
+      header = f"Command error: {type(error.original).__name__}: {error.original}"
+      message = header + "\n" + str(tb)
+
+      await ctx.send(f"oof ```py\n{tb}\n```")
+
+      self.dispatch("uncaught_command_invoke_error",
+              error.original, (message, tb, ctx))
+      self.logger.error(message)
+      return
 
 ava = AvaBot(
   command_prefix="av!" if os.environ.get("pm_id") else "wr!",

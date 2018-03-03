@@ -4,6 +4,7 @@
 
 
 import asyncio
+import json
 import re
 
 import discord
@@ -85,6 +86,21 @@ async def avasdemon_scrape(comic):
     }
   }
 
+
+async def xkcd_fetch(comic):
+  resp = await http_req(f'{comic["base_url"]}/info.0.json')
+  text = await resp.text()
+  page = json.loads(text)
+  return {
+    "latest_post": {
+      "unique_id": page["num"],
+      "url": f'{comic["base_url"]}/{page["num"]}',
+      "title": f'{page["title"]} ({page["alt"]}',
+      "time": r.time(int(page["year"]), int(page["month"]), int(page["day"]), "Z")
+    }
+  }
+
+
 async def twitter_listener(user):
   handle = comic["handle"] # User's Twitter handle
   
@@ -101,6 +117,12 @@ webcomics = [
     "friendly": "Ava's Demon",
     "check_updates": avasdemon_scrape,
     "slug": "avasdemon"
+  },
+  {
+    "base_url": "https://xkcd.com",
+    "friendly": "XKCD",
+    "check_updates": xkcd_fetch,
+    "slug": "xkcd"
   },
   {
     "slug": "mylifewithfel",
