@@ -97,5 +97,4 @@ ava = AvaBot(
   description="A bot that scrapes various webcomics for updates and announces them to people opted in!",
   pm_help=None)
 
-print("oof!")
 ava.run(cfg.token)

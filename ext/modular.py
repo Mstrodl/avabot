@@ -167,6 +167,7 @@ class Modular(Cog):
       if announced_post and results["latest_post"]["unique_id"] == announced_post["unique_id"]:
         self.bot.logger.info(f"No updates for {friendly_name}")
         continue
+      self.bot.logger.info(f'Found update for {friendly_name}, unique_id: {results["latest_post"]["unique_id"]}')
 
       await self.bot.r.table("updates").insert({
         "id": comic["slug"],
