@@ -32,11 +32,12 @@ class AvaBot(commands.Bot):
     self.session = aiohttp.ClientSession(loop=self.loop)
     self.start_time = int(round(time.time() * 1000))
     self.uptime = lambda: int(round(time.time() * 1000) - self.start_time)
+    self.public_dev = False
 
     # We only need to connect to rethink once...
     self.r = r
     self.r.set_loop_type("asyncio")
-    self.r_connection = self.loop.create_task(self._db_connect())
+    self.db_connect_task = self.loop.create_task(self._db_connect())
 
     for cog_name in cog_list:
       try:
@@ -49,9 +50,10 @@ class AvaBot(commands.Bot):
     conn = await self.r.connect("localhost", 28015, "ava")
     conn.repl()
     self.r_connection = conn
+    return conn
 
   async def on_message(self, message):
-    if not self.prod and not await self.is_owner(message.author):
+    if not self.prod and not await self.is_owner(message.author) and not self.public_dev:
       return 
     ctx = await self.get_context(message)
     await self.invoke(ctx)

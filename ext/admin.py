@@ -292,10 +292,12 @@ class Admin(Cog):
   async def die(self, ctx):
     """Shuts down the bot safely"""
     await ctx.send("oof.")
-    await self.bot.r_connection.close()
-    await self.bot.session.close()
+    if self.bot.r_connection:
+      await self.bot.r_connection.close()
+    if self.bot.session:
+      await self.bot.session.close()
     for ext in list(self.bot.extensions):
-      print(ext)
+      self.bot.logger.info(f"Unloading {ext} to prepare for shutdown")
       self.bot.unload_extension(ext)
     await ctx.bot.logout()
 

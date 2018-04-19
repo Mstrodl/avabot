@@ -187,6 +187,7 @@ class Modular(Cog):
       self.comic_dict[comic["slug"]] = comic
 
     async def run_check():
+      await self.bot.db_connect_task
       while True:
         self.bot.logger.info("Checking RSS automatically...")
         await self.check_updates()
