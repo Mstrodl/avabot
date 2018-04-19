@@ -80,7 +80,7 @@ async def twokinds_scrape(comic):
   title = article_obj.cssselect("img[alt=\"Comic Page\"]")[0].attrib["title"]
   try:
     page_num = int(os.path.basename(os.path.split(permalink_url)[0]))
-  except ValueError:
+  except ValueError as err:
     raise BadPage(f"No unique ID found for page title: '{title}'")
   
   return {
