@@ -78,7 +78,10 @@ async def twokinds_scrape(comic):
   permalink_page = article_obj.cssselect("div.below-nav p.permalink a")[0]
   permalink_url = permalink_page.attrib["href"]
   title = article_obj.cssselect("img[alt=\"Comic Page\"]")[0].attrib["title"]
-  page_num = int(os.path.basename(os.path.split(permalink_url)[0]))
+  try:
+    page_num = int(os.path.basename(os.path.split(permalink_url)[0]))
+  except ValueError:
+    raise BadPage(f"No unique ID found for page title: '{title}'")
   
   return {
     "latest_post": {
