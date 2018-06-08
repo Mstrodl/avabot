@@ -23,6 +23,7 @@ class AvaBot(commands.Bot):
   def __init__(self, **kwargs):
     super().__init__(**kwargs)
     self.prod = True if os.environ.get("pm_id") else False
+    self.config = cfg
 
     logging.basicConfig(
       format="[%(levelname)s] - %(message)s",
