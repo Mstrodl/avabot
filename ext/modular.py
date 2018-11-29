@@ -193,7 +193,11 @@ class Modular(Cog):
       await self.bot.db_connect_task
       while True:
         self.bot.logger.info("Checking RSS automatically...")
-        await self.check_updates()
+        try:
+          await self.check_updates()
+        except Exception as err:
+          self.bot.logger.exception("penid")
+          self.bot.logger.exception(err)
         await asyncio.sleep(5 * 60)  # Check RSS every 5 min
     self.check_loop = self.bot.loop.create_task(run_check())
 
