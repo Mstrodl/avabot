@@ -11,7 +11,7 @@ import os
 import discord
 import aiohttp
 import lxml.html
-import rethinkdb as r
+# import rethinkdb as r
 import dateutil.parser
 import datetime
 import lxml.etree
@@ -39,7 +39,7 @@ async def http_req(url, headers={}, body=None):
       }
 
 
-async def common_rss(comic):
+async def common_rss(comic, bot):
   resp = await http_req(comic["rss_url"])
   text = resp["text"]
 
@@ -57,7 +57,7 @@ async def common_rss(comic):
     if found_pubdate:
       time = dateutil.parser.parse(found_pubdate[0].text)
     else:
-      time = r.now()
+      time = bot.r.now()
     return {
       "latest_post": {
         "unique_id": page_num,
@@ -67,8 +67,23 @@ async def common_rss(comic):
       }
     }
 
+async def egs_scrape(comic, bot):
+  resp = await http_req(comic["base_url"])
+  text = resp["text"]
+  text_reencoded = text.encode("utf-8")
+  xml_document = lxml.html.fromstring(text_reencoded, parser=html_parser)
+  comic_date_element = xml_document.cssselect('#leftarea div[style*="font-family"]')[0]
+  comic_img_element = xml_document.cssselect('#cc-comic')[0]
+  comic_date = lxml.html.tostring(comic_date_element)
+  comic_name = comic_img_element.attrib["title"]
+  return {
+    "unique_id": comic_name,
+    "url": f'{comic["base_url"]}{comic_name}',
+    "title": comic_date,
+    "time": bot.r.now()
+  }
 
-async def twokinds_scrape(comic):
+async def twokinds_scrape(comic, bot):
   resp = await http_req(comic["base_url"])
   text = resp["text"]
   text_reencoded = text.encode("utf-8")
@@ -88,12 +103,12 @@ async def twokinds_scrape(comic):
       "unique_id": page_num,
       "url": f'{comic["base_url"]}{permalink_url}',
       "title": title,
-      "time": r.now()
+      "time": bot.r.now()
     }
   }
 
 # Ava's Demon scraper because the she doesn't update RSS as soon...
-async def avasdemon_scrape(comic):
+async def avasdemon_scrape(comic, bot):
   resp = await http_req(f'{comic["base_url"]}/pages.php', {
     "Origin": comic["base_url"],
     "Referer": f'{comic["base_url"]}/pages.php',
@@ -112,12 +127,12 @@ async def avasdemon_scrape(comic):
       "unique_id": page_num,
       "url": f'{comic["base_url"]}/{latest_url}',
       "title": f"Page {page_num}",
-      "time": r.now()
+      "time": bot.r.now()
     }
   }
 
 
-async def xkcd_fetch(comic):
+async def xkcd_fetch(comic, bot):
   resp = await http_req(f'{comic["base_url"]}/info.0.json')
   text = resp["text"]
   page = json.loads(text)
@@ -126,12 +141,12 @@ async def xkcd_fetch(comic):
       "unique_id": page["num"],
       "url": f'{comic["base_url"]}/{page["num"]}',
       "title": f'{page["title"]} ({page["alt"]}',
-      "time": r.time(int(page["year"]), int(page["month"]), int(page["day"]), "Z")
+      "time": bot.r.time(int(page["year"]), int(page["month"]), int(page["day"]), "Z")
     }
   }
 
 
-async def twitter_listener(user):
+async def twitter_listener(user, bot):
   handle = comic["handle"] # User's Twitter handle
   
 
@@ -142,6 +157,12 @@ webcomics = [
     "check_updates": twokinds_scrape,
     "base_url": "http://twokinds.keenspot.com"
   },
+  {
+    "slug": "egs",
+    "friendly": "El Goonish Shive",
+    "check_updates": egs_scrape,
+    "base_url": "https://egscomics.com/comic/"
+  },  
   {
     "base_url": "http://avasdemon.com",
     "friendly": "Ava's Demon",
@@ -210,7 +231,7 @@ class Modular(Cog):
       friendly_name = comic["friendly"]
       self.bot.logger.info(f"Fetching {friendly_name}")
       try:
-        results = await comic["check_updates"](comic)
+        results = await comic["check_updates"](comic, self.bot)
       except aiohttp.client_exceptions.ClientConnectionError as err:
         self.bot.logger.error(f"Error occurred while fetching {friendly_name}: {err}")
         continue
@@ -378,7 +399,7 @@ class Modular(Cog):
       "guild_id": str(ctx.guild.id),
       "slug": slug
     }
-    results = await r.table("subscriptions").filter(sub_dict).delete().run()
+    results = await self.bot.r.table("subscriptions").filter(sub_dict).delete().run()
     if results["deleted"] <= 0:
       return await ctx.send("No subscriptions deleted")
     elif results["deleted"] > 0:
@@ -400,7 +421,7 @@ class Modular(Cog):
       "guild_id": str(ctx.guild.id),
       "slug": slug,
     }
-    await r.table("subscriptions").filter(sub_dict).delete().run()
+    await self.bot.r.table("subscriptions").filter(sub_dict).delete().run()
     sub_dict["role_id"] = str(role.id) if role else None
 
     await self.bot.r.table("subscriptions").insert(sub_dict).run()
