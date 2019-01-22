@@ -10,6 +10,8 @@ import os
 
 import discord
 import aiohttp
+# Oops, my finger slipped
+import requests
 import lxml.html
 # import rethinkdb as r
 import dateutil.parser
@@ -68,8 +70,8 @@ async def common_rss(comic, bot):
     }
 
 async def egs_scrape(comic, bot):
-  resp = await http_req(comic["base_url"])
-  text = resp["text"]
+  resp = requests.get(comic["base_url"])
+  text = resp.text
   text_reencoded = text.encode("utf-8")
   xml_document = lxml.html.fromstring(text_reencoded, parser=html_parser)
   comic_date_element = xml_document.cssselect('#leftarea div[style*="font-family"]')[0]
@@ -77,10 +79,12 @@ async def egs_scrape(comic, bot):
   comic_date = lxml.html.tostring(comic_date_element)
   comic_name = comic_img_element.attrib["title"]
   return {
-    "unique_id": comic_name,
-    "url": f'{comic["base_url"]}{comic_name}',
-    "title": comic_date,
-    "time": bot.r.now()
+    "latest_post": {
+      "unique_id": comic_name,
+      "url": f'{comic["base_url"]}{comic_name}',
+      "title": comic_date,
+      "time": bot.r.now()
+    }
   }
 
 async def twokinds_scrape(comic, bot):
