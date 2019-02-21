@@ -25,7 +25,8 @@ from .common import Cog
 
 page_num_regex = r"((?:-|\d){3,5})"  # Used to match page #s in RSS feed titles
 # Some newer comics just seem to work better this way
-comic_link_regex = r"(?:\/comic\/([a-z0-9\-]+)|(?:comic=((?:-|\d){3,5})))$"
+comic_link_regex = r"\/comic\/([a-z0-9\-]+)$"
+comic_link_num_regex = r"comic=((?:-|\d){3,5})$"
 parser = lxml.etree.XMLParser(encoding="utf-8")
 html_parser = lxml.html.HTMLParser(encoding="utf-8")
 
@@ -56,6 +57,8 @@ async def common_rss(comic, bot):
     page_num_search = re.search(page_num_regex, title)
     if not page_num_search:
       page_num_search = re.search(comic_link_regex, url)
+    if not page_num_search:
+      page_num_search = re.search(comic_link_num_regex, url)
     if not page_num_search:
       raise BadPage(f"No unique ID found for page title: '{title}' or url: '{url}'")
 
