@@ -24,6 +24,8 @@ from discord.ext import commands
 from .common import Cog
 
 page_num_regex = r"((?:-|\d){3,5})"  # Used to match page #s in RSS feed titles
+# Some newer comics just seem to work better this way
+comic_link_regex = r"/comic/([a-z0-9\-]+)$"
 parser = lxml.etree.XMLParser(encoding="utf-8")
 html_parser = lxml.html.HTMLParser(encoding="utf-8")
 
@@ -53,7 +55,10 @@ async def common_rss(comic, bot):
     url = post.cssselect("link")[0].text
     page_num_search = re.search(page_num_regex, title)
     if not page_num_search:
-      raise BadPage(f"No unique ID found for page title: '{title}'")
+      page_num_search = re.search(comic_link_regex, url)
+    if not page_num_search:
+      raise BadPage(f"No unique ID found for page title: '{title}' or url: '{url}'")
+
     page_num = page_num_search.group(1)
     found_pubdate = post.cssselect("pubDate")
     if found_pubdate:
@@ -155,6 +160,36 @@ async def twitter_listener(user, bot):
   
 
 webcomics = [
+  {
+    "slug": "questionablecontent",
+    "friendly": "Questionable Content",
+    "check_updates": common_rss,
+    "rss_url": "https://www.questionablecontent.net/QCRSS.xml"
+  },
+  {
+    "slug": "smbc",
+    "friendly": "Saturday Morning Breakfast Cereal",
+    "check_updates": common_rss,
+    "rss_url": "http://www.smbc-comics.com/comic/rss"
+  },
+  {
+    "slug": "back",
+    "friendly": "BACK",
+    "check_updates": common_rss,
+    "rss_url": "http://backcomic.com/rss.xml"
+  },
+  {
+    "slug": "tove",
+    "friendly": "TOVE",
+    "check_updates": common_rss,
+    "rss_url": "http://www.tovecomic.com/comic/rss"
+  },
+  {
+    "slug": "drugsandwires",
+    "friendly": "DRUGS & WIRES",
+    "check_update": common_rss,
+    "rss_url": "https://www.drugsandwires.fail/feed/"
+  },
   {
     "slug": "twokinds",
     "friendly": "Two Kinds",
