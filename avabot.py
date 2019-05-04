@@ -5,7 +5,7 @@ import time
 import traceback
 
 import aiohttp
-import rethinkdb as r
+from rethinkdb import RethinkDB
 import discord
 from discord.ext import commands
 
@@ -36,7 +36,7 @@ class AvaBot(commands.Bot):
     self.public_dev = False
 
     # We only need to connect to rethink once...
-    self.r = r
+    self.r = RethinkDB()
     self.r.set_loop_type("asyncio")
     self.db_connect_task = self.loop.create_task(self._db_connect())
 
