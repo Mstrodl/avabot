@@ -25,7 +25,7 @@ from .common import Cog
 
 page_num_regex = r"((?:-|\d){3,5})"  # Used to match page #s in RSS feed titles
 # Some newer comics just seem to work better this way
-comic_link_regex = r"\/comic\/([a-z0-9\-]+)$"
+comic_link_regex = r"\/(?:dnw)?comic\/([a-z0-9\-]+)(?:\/)?$"
 comic_link_num_regex = r"comic=((?:-|\d){3,5})$"
 parser = lxml.etree.XMLParser(encoding="utf-8")
 html_parser = lxml.html.HTMLParser(encoding="utf-8")
@@ -204,18 +204,18 @@ webcomics = [
     "check_updates": common_rss,
     "rss_url": "https://www.questionablecontent.net/QCRSS.xml"
   },
-  {
-    "slug": "smbc",
-    "friendly": "Saturday Morning Breakfast Cereal",
-    "check_updates": common_rss,
-    "rss_url": "http://www.smbc-comics.com/comic/rss"
-  },
-  {
-    "slug": "back",
-    "friendly": "BACK",
-    "check_updates": common_rss,
-    "rss_url": "http://backcomic.com/rss.xml"
-  },
+#  {
+#    "slug": "smbc",
+#    "friendly": "Saturday Morning Breakfast Cereal",
+#    "check_updates": common_rss,
+#    "rss_url": "http://www.smbc-comics.com/comic/rss"
+#  },
+#  {
+#    "slug": "back",
+#    "friendly": "BACK",
+#    "check_updates": common_rss,
+#    "rss_url": "http://backcomic.com/rss.xml"
+#  },
   {
     "slug": "tove",
     "friendly": "TOVE",
@@ -225,7 +225,7 @@ webcomics = [
   {
     "slug": "drugsandwires",
     "friendly": "DRUGS & WIRES",
-    "check_update": common_rss,
+    "check_updates": common_rss,
     "rss_url": "https://www.drugsandwires.fail/feed/"
   },
   {
@@ -309,6 +309,8 @@ class Modular(Cog):
       self.bot.logger.info(f"Fetching {friendly_name}")
       try:
         results = await comic["check_updates"](comic, self.bot)
+      except lxml.etree.XMLSyntaxError as err:
+        self.bot.logger.error(f"Error occurred while fetching {friendly_name}: {err}")
       except aiohttp.client_exceptions.ClientConnectionError as err:
         self.bot.logger.error(f"Error occurred while fetching {friendly_name}: {err}")
         continue
@@ -346,7 +348,7 @@ class Modular(Cog):
                       f"Bearer {self.bot.config.mastodon['token']}"},
                      {
                        "status": f"{response}\n\n #avabot_update #avabot_update_{comic['slug']}",
-                       "visibility": "public"
+                       "visibility": "unlisted"
                      })
       
     for channel in channels:
