@@ -340,7 +340,7 @@ class Modular(Cog):
     url = results["latest_post"]["url"]
     response = f"New panels for {friendly_name}!\nLatest panel:\n{post_title}\n{url}"
 
-    if self.bot.config.mastodon and self.bot.config.mastodon["token"] and self.bot.config.mastodon["instance_url"]:
+    if self.bot.prod and self.bot.config.mastodon and self.bot.config.mastodon["token"] and self.bot.config.mastodon["instance_url"]:
       await http_req(f"{self.bot.config.mastodon['instance_url']}/api/v1/statuses",
                      {"Authorization":
                       f"Bearer {self.bot.config.mastodon['token']}"},
