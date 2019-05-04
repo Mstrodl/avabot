@@ -44,6 +44,35 @@ async def http_req(url, headers={}, body=None):
       }
 
 
+async def status_page(comic, bot):
+  resp = await http_req("https://" + comic["statuspage_slug"] + ".statuspage.io/history.json")
+  text = resp["text"]
+
+  if resp["resp"].status == 200:
+    parsed = json.loads(text)
+
+    months = parsed.get("months", None)
+    if months == None:
+      raise BadPage(f"No months prop")
+    month = months[0]
+    if month == None:
+      raise BadPage(f"No months listed")
+    incidents = month.get("incidents", None)
+    if incidents == None:
+      raise BadPage(f"No incidents prop")
+    incident = incidents[0]
+    if incident == None:
+      raise BadPage(f"No incidents listed")
+
+    return {
+      "latest_post": {
+        "unique_id": incident["code"],
+        "url": f"https://{comic['statuspage_slug']}.statuspage.io/incidents/{incident['code']}",
+        "title": incident["name"],
+        "time": bot.r.now(),
+      }
+    }
+
 async def common_rss(comic, bot):
   resp = await http_req(comic["rss_url"])
   text = resp["text"]
@@ -163,6 +192,12 @@ async def twitter_listener(user, bot):
   
 
 webcomics = [
+  {
+    "slug": "discordstatus",
+    "friendly": "Discord Status",
+    "check_updates": status_page,
+    "statuspage_slug": "discord"
+  },
   {
     "slug": "questionablecontent",
     "friendly": "Questionable Content",
