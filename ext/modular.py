@@ -89,7 +89,8 @@ async def common_rss(comic, bot):
     if not page_num_search:
       page_num_search = re.search(comic_link_num_regex, url)
     if not page_num_search:
-      raise BadPage(f"No unique ID found for page title: '{title}' or url: '{url}'")
+      page_num_search = re.search(r".*", url)
+      # raise BadPage(f"No unique ID found for page title: '{title}' or url: '{url}'")
 
     page_num = page_num_search.group(1)
     found_pubdate = post.cssselect("pubDate")
@@ -131,13 +132,13 @@ async def twokinds_scrape(comic, bot):
   xml_document = lxml.html.fromstring(text_reencoded, parser=html_parser)
   # Grab the newest page from the 'latest' button
   article_obj = xml_document.cssselect("article.comic")[0]
-  permalink_page = article_obj.cssselect("div.below-nav p.permalink a")[0]
+  permalink_page = article_obj.cssselect("div.below-nav p.permalink a[href^=\"/comic\/\"]")[0]
   permalink_url = permalink_page.attrib["href"]
   title = article_obj.cssselect("img[alt=\"Comic Page\"]")[0].attrib["title"]
   try:
     page_num = int(os.path.basename(os.path.split(permalink_url)[0]))
   except ValueError as err:
-    raise BadPage(f"No unique ID found for page title: '{title}'")
+    raise BadPage(f"No unique ID found for page URL: '{permalink_url}'")
   
   return {
     "latest_post": {
@@ -160,7 +161,7 @@ async def avasdemon_scrape(comic, bot):
   # Grab the newest page from the 'latest' button
   latest_url = xml_document.cssselect("img[src=\"latest.png\"]")[0] \
                            .getparent().attrib["href"]
-  
+
   query_params = urllib.parse.parse_qs(urllib.parse.urlparse(latest_url).query)
   page_num = query_params["page"][0]
   return {
@@ -241,7 +242,7 @@ webcomics = [
     "base_url": "https://egscomics.com/comic/"
   },  
   {
-    "base_url": "http://avasdemon.com",
+    "base_url": "https://avasdemon.com",
     "friendly": "Ava's Demon",
     "check_updates": avasdemon_scrape,
     "slug": "avasdemon"
@@ -316,6 +317,9 @@ class Modular(Cog):
         continue
       except BadPage as err:
         self.bot.logger.error(f"Error occurred while fetching {friendly_name}: {err}")
+        continue
+      except Exception as err:
+        self.bot.logger.error(f"VERY bad, this should never happen! {friendly_name}: {err}")
         continue
 
       self.bot.logger.info(f"Checked for updates on {friendly_name}")
