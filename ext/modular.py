@@ -200,6 +200,12 @@ webcomics = [
     "statuspage_slug": "discord"
   },
   {
+    "slug": "cloudflarestatus",
+    "friendly": "Cloutflare Status",
+    "check_updates": status_page,
+    "statuspage_slug": "cloudflare"
+  },
+  {
     "slug": "questionablecontent",
     "friendly": "Questionable Content",
     "check_updates": common_rss,
