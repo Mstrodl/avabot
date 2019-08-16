@@ -223,6 +223,12 @@ webcomics = [
     "check_updates": common_rss,
     "rss_url": "https://www.questionablecontent.net/QCRSS.xml"
   },
+  {
+    "slug": "overthehedge",
+    "friendly": "Over the Hedge",
+    "check_updates": common_rss,
+    "rss_url": "https://overthehedgeblog.wordpress.com/feed"
+  },
 #  {
 #    "slug": "smbc",
 #    "friendly": "Saturday Morning Breakfast Cereal",
