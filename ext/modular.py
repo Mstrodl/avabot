@@ -7,6 +7,8 @@ import asyncio
 import json
 import re
 import os
+import math
+import time
 
 import discord
 import aiohttp
@@ -45,7 +47,10 @@ async def http_req(url, headers={}, body=None):
 
 
 async def status_page(comic, bot):
-  resp = await http_req("https://" + comic["statuspage_slug"] + ".statuspage.io/history.json")
+  base_url = comic["statuspage_slug"] + ".statuspage.io" \
+          if comic.get("statuspage_slug", None) != None \
+          else comic["statuspage_url"]
+  resp = await http_req("https://" + base_url + "/history.json")
   text = resp["text"]
 
   if resp["resp"].status == 200:
@@ -67,11 +72,13 @@ async def status_page(comic, bot):
     return {
       "latest_post": {
         "unique_id": incident["code"],
-        "url": f"https://{comic['statuspage_slug']}.statuspage.io/incidents/{incident['code']}",
+        "url": f"https://{base_url}/incidents/{incident['code']}",
         "title": incident["name"],
         "time": bot.r.now(),
       }
     }
+  else:
+    raise BadPage("Non-200 status code: " + str(resp["resp"].status))
 
 async def common_rss(comic, bot):
   resp = await http_req(comic["rss_url"])
@@ -89,7 +96,7 @@ async def common_rss(comic, bot):
     if not page_num_search:
       page_num_search = re.search(comic_link_num_regex, url)
     if not page_num_search:
-      page_num_search = re.search(r".*", url)
+      page_num_search = re.search(r"(.*)", url)
       # raise BadPage(f"No unique ID found for page title: '{title}' or url: '{url}'")
 
     page_num = page_num_search.group(1)
@@ -151,23 +158,16 @@ async def twokinds_scrape(comic, bot):
 
 # Ava's Demon scraper because the she doesn't update RSS as soon...
 async def avasdemon_scrape(comic, bot):
-  resp = await http_req(f'{comic["base_url"]}/pages.php', {
-    "Origin": comic["base_url"],
-    "Referer": f'{comic["base_url"]}/pages.php',
-    "Content-Type": "application/x-www-form-urlencoded"
-  }, "page=0001")
-  text = resp["text"]
-  xml_document = lxml.html.fromstring(text)
-  # Grab the newest page from the 'latest' button
-  latest_url = xml_document.cssselect("img[src=\"latest.png\"]")[0] \
-                           .getparent().attrib["href"]
+  resp = await http_req(f'{comic["base_url"]}/js/comicQuickLinks.js?v=' + str(math.floor(time.time())))
 
-  query_params = urllib.parse.parse_qs(urllib.parse.urlparse(latest_url).query)
-  page_num = query_params["page"][0]
+  blob = re.search(r'var ad_cql="(.*)";$', resp["text"]).group(1)
+  comic_data = ''.join([chr(int(chars, 16)) for chars in re.findall(r".{1,2}", blob)])
+  page_num = re.search(r"var latestComicLinkHtml=(\d+);", comic_data).group(1)
+
   return {
     "latest_post": {
       "unique_id": page_num,
-      "url": f'{comic["base_url"]}/{latest_url}',
+      "url": f'{comic["base_url"]}/pages.php#{page_num}',
       "title": f"Page {page_num}",
       "time": bot.r.now()
     }
@@ -204,6 +204,18 @@ webcomics = [
     "friendly": "Cloutflare Status",
     "check_updates": status_page,
     "statuspage_slug": "cloudflare"
+  },
+  {
+    "slug": "githubstatus",
+    "friendly": "Github Status",
+    "check_updates": status_page,
+    "statuspage_url": "githubstatus.com"
+  },
+  {
+    "slug": "webplatformnews",
+    "friendly": "Web Platform News",
+    "check_updates": common_rss,
+    "rss_url": "https://webplatform.news/feed.xml"
   },
   {
     "slug": "questionablecontent",
@@ -303,7 +315,7 @@ class Modular(Cog):
         except Exception as err:
           self.bot.logger.exception("penid")
           self.bot.logger.exception(err)
-        await asyncio.sleep(5 * 60)  # Check RSS every 5 min
+        await asyncio.sleep(10 * 60)  # Check RSS every 10 min
     self.check_loop = self.bot.loop.create_task(run_check())
 
   def __unload(self):
@@ -326,6 +338,7 @@ class Modular(Cog):
         continue
       except Exception as err:
         self.bot.logger.error(f"VERY bad, this should never happen! {friendly_name}: {err}")
+        self.bot.logger.exception(err)
         continue
 
       self.bot.logger.info(f"Checked for updates on {friendly_name}")
