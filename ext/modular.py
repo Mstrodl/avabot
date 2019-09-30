@@ -212,6 +212,18 @@ webcomics = [
     "statuspage_url": "githubstatus.com"
   },
   {
+    "slug": "redditstatus",
+    "friendly": "Reddit Status",
+    "check_updates": status_page,
+    "statuspage_slug": "reddit"
+  },
+  {
+    "slug": "dostatus",
+    "friendly": "Digital Ocean Status",
+    "check_updates": status_page,
+    "statuspage_url": "status.digitalocean.com"
+  },
+  {
     "slug": "webplatformnews",
     "friendly": "Web Platform News",
     "check_updates": common_rss,
