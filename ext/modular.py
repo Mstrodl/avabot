@@ -224,6 +224,12 @@ webcomics = [
     "statuspage_url": "status.digitalocean.com"
   },
   {
+    "slug": "gitlabstatus",
+    "friendly": "GitLab Status",
+    "check_updates": common_rss,
+    "rss_url": "https://status.gitlab.com/pages/5b36dc6502d06804c08349f7/rss"
+  },
+  {
     "slug": "webplatformnews",
     "friendly": "Web Platform News",
     "check_updates": common_rss,
