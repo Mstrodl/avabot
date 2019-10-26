@@ -229,6 +229,12 @@ webcomics = [
     "check_updates": common_rss,
     "rss_url": "https://overthehedgeblog.wordpress.com/feed"
   },
+  {
+    "slug": "pv02",
+    "friendly": "A robot named Pivot",
+    "check_updates": common_rss,
+    "rss_url": "https://www.pv02comic.com/feed/"
+  },
 #  {
 #    "slug": "smbc",
 #    "friendly": "Saturday Morning Breakfast Cereal",
