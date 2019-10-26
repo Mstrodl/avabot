@@ -102,7 +102,7 @@ async def common_rss(comic, bot):
     page_num = page_num_search.group(1)
     found_pubdate = post.cssselect("pubDate")
     if found_pubdate:
-      time = dateutil.parser.parse(found_pubdate[0].text)
+        time = dateutil.parser.parse(found_pubdate[0].text).astimezone(bot.r.make_timezone("0:00"))
     else:
       time = bot.r.now()
     return {
@@ -209,7 +209,25 @@ webcomics = [
     "slug": "githubstatus",
     "friendly": "Github Status",
     "check_updates": status_page,
-    "statuspage_url": "githubstatus.com"
+    "statuspage_url": "www.githubstatus.com"
+  },
+  {
+    "slug": "redditstatus",
+    "friendly": "Reddit Status",
+    "check_updates": status_page,
+    "statuspage_slug": "reddit"
+  },
+  {
+    "slug": "dostatus",
+    "friendly": "Digital Ocean Status",
+    "check_updates": status_page,
+    "statuspage_url": "status.digitalocean.com"
+  },
+  {
+    "slug": "gitlabstatus",
+    "friendly": "GitLab Status",
+    "check_updates": common_rss,
+    "rss_url": "https://status.gitlab.com/pages/5b36dc6502d06804c08349f7/rss"
   },
   {
     "slug": "webplatformnews",
@@ -287,7 +305,7 @@ webcomics = [
     "slug": "mylifewithfel",
     "friendly": "My Life With Fel",
     "check_updates": common_rss,
-    "rss_url": "http://mylifewithfel.smackjeeves.com/rss/"
+    "rss_url": "http://www.mylifewithfel.com/rss/"
   },
   {
     "slug": "killsixbilliondemons",
