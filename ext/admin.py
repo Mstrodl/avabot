@@ -325,7 +325,7 @@ class Admin(Cog):
 
   @commands.command(name="reload")
   @commands.is_owner()
-  async def cog_reload(self, ctx, *, cog: str):
+  async def command_cog_reload(self, ctx, *, cog: str):
     """Command which Reloads an extension."""
     if cog == "admin":
       await ctx.send("bad idea.")

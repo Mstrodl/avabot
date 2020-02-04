@@ -64,6 +64,8 @@ async def status_page(comic, bot):
     incidents = month.get("incidents", None)
     if incidents == None:
       raise BadPage(f"No incidents prop")
+    if len(incidents) < 1:
+      raise BadPage(f"No incidents listed")
     incident = incidents[0]
     if incident == None:
       raise BadPage(f"No incidents listed")
@@ -438,6 +440,14 @@ class Modular(Cog):
         id=int(subscription["role_id"])) if subscription["role_id"] else None) or None
     } async for subscription in subscriptions
       if self.bot.get_channel(int(subscription["channel_id"]))]
+
+  @commands.command()
+  async def latest(self, ctx, *, comic_slug: str):
+    """Gets latest panel of a webcomic"""
+    if not comic_slug in self.comic_dict:
+      return await ctx.send("Comic doesn't exist")
+    update = await self.bot.r.table("updates").get(comic_slug).run()
+    await ctx.send(f"Latest panel for {comic_slug}: {update['title']} - {update['url']}")
 
   @commands.command(aliases=["unsubscribe", "unsub", "sub"])
   async def subscribe(self, ctx, *, role: discord.Role=None):
