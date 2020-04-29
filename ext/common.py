@@ -1,7 +1,8 @@
 import aiohttp
+import discord.ext.commands.cog
 
 
-class Cog:
+class Cog(discord.ext.commands.cog.Cog):
   def __init__(self, bot):
     self.bot = bot
 

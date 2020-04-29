@@ -13,7 +13,6 @@ import time
 import discord
 import aiohttp
 # Oops, my finger slipped
-import requests
 import lxml.html
 # import rethinkdb as r
 import dateutil.parser
@@ -27,7 +26,7 @@ from .common import Cog
 
 page_num_regex = r"((?:-|\d){3,5})"  # Used to match page #s in RSS feed titles
 # Some newer comics just seem to work better this way
-comic_link_regex = r"\/(?:dnw)?comic\/([a-z0-9\-]+)(?:\/)?$"
+comic_link_regex = r"\/(?:dnw)?comic\/([a-z0-9_\-]+)(?:\/)?$"
 comic_link_num_regex = r"comic=((?:-|\d){3,5})$"
 parser = lxml.etree.XMLParser(encoding="utf-8")
 html_parser = lxml.html.HTMLParser(encoding="utf-8")
@@ -41,7 +40,7 @@ async def http_req(url, headers={}, body=None):
     chosen_req = session.post if body else session.get
     async with chosen_req(url, headers=headers, data=body) as resp:
       return {
-        "text": await resp.text(),
+        "text": await resp.read(),
         "resp": resp
       }
 
@@ -65,6 +64,8 @@ async def status_page(comic, bot):
     incidents = month.get("incidents", None)
     if incidents == None:
       raise BadPage(f"No incidents prop")
+    if len(incidents) < 1:
+      raise BadPage(f"No incidents listed")
     incident = incidents[0]
     if incident == None:
       raise BadPage(f"No incidents listed")
@@ -85,8 +86,7 @@ async def common_rss(comic, bot):
   text = resp["text"]
 
   if resp["resp"].status == 200:
-    text_reencoded = text.encode("utf-8")
-    parsed = lxml.etree.fromstring(text_reencoded, parser=parser)
+    parsed = lxml.etree.fromstring(text, parser=parser)
     post = parsed.cssselect("rss channel item")[0]
     title = post.cssselect("title")[0].text
     url = post.cssselect("link")[0].text
@@ -115,10 +115,9 @@ async def common_rss(comic, bot):
     }
 
 async def egs_scrape(comic, bot):
-  resp = requests.get(comic["base_url"])
-  text = resp.text
-  text_reencoded = text.encode("utf-8")
-  xml_document = lxml.html.fromstring(text_reencoded, parser=html_parser)
+  resp = await http_req(comic["base_url"])
+  text = resp["text"]
+  xml_document = lxml.html.fromstring(text, parser=html_parser)
   comic_date_element = xml_document.cssselect('#leftarea div[style*="font-family"]')[0]
   comic_img_element = xml_document.cssselect('#cc-comic')[0]
   comic_date = lxml.html.tostring(comic_date_element)
@@ -135,8 +134,7 @@ async def egs_scrape(comic, bot):
 async def twokinds_scrape(comic, bot):
   resp = await http_req(comic["base_url"])
   text = resp["text"]
-  text_reencoded = text.encode("utf-8")
-  xml_document = lxml.html.fromstring(text_reencoded, parser=html_parser)
+  xml_document = lxml.html.fromstring(text, parser=html_parser)
   # Grab the newest page from the 'latest' button
   article_obj = xml_document.cssselect("article.comic")[0]
   permalink_page = article_obj.cssselect("div.below-nav p.permalink a[href^=\"/comic\/\"]")[0]
@@ -160,7 +158,7 @@ async def twokinds_scrape(comic, bot):
 async def avasdemon_scrape(comic, bot):
   resp = await http_req(f'{comic["base_url"]}/js/comicQuickLinks.js?v=' + str(math.floor(time.time())))
 
-  blob = re.search(r'var ad_cql="(.*)";$', resp["text"]).group(1)
+  blob = re.search(r'var ad_cql="(.*)";$', resp["text"].decode()).group(1)
   comic_data = ''.join([chr(int(chars, 16)) for chars in re.findall(r".{1,2}", blob)])
   page_num = re.search(r"var latestComicLinkHtml=(\d+);", comic_data).group(1)
 
@@ -448,6 +446,14 @@ class Modular(Cog):
         id=int(subscription["role_id"])) if subscription["role_id"] else None) or None
     } async for subscription in subscriptions
       if self.bot.get_channel(int(subscription["channel_id"]))]
+
+  @commands.command()
+  async def latest(self, ctx, *, comic_slug: str):
+    """Gets latest panel of a webcomic"""
+    if not comic_slug in self.comic_dict:
+      return await ctx.send("Comic doesn't exist")
+    update = await self.bot.r.table("updates").get(comic_slug).run()
+    await ctx.send(f"Latest panel for {comic_slug}: {update['title']} - {update['url']}")
 
   @commands.command(aliases=["unsubscribe", "unsub", "sub"])
   async def subscribe(self, ctx, *, role: discord.Role=None):
