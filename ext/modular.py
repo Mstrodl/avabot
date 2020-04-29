@@ -253,6 +253,12 @@ webcomics = [
     "check_updates": common_rss,
     "rss_url": "https://www.pv02comic.com/feed/"
   },
+  {
+    "slug": "bodies",
+    "friendly": "Bodies",
+    "check_updates": common_rss,
+    "rss_url": "https://www.webtoons.com/en/challenge/bodies/rss?title_no=313877"
+  },
 #  {
 #    "slug": "smbc",
 #    "friendly": "Saturday Morning Breakfast Cereal",
