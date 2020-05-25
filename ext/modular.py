@@ -180,7 +180,7 @@ async def xkcd_fetch(comic, bot):
     "latest_post": {
       "unique_id": page["num"],
       "url": f'{comic["base_url"]}/{page["num"]}',
-      "title": f'{page["title"]} ({page["alt"]}',
+      "title": f'{page["title"]} ({page["alt"]})',
       "time": bot.r.time(int(page["year"]), int(page["month"]), int(page["day"]), "Z")
     }
   }
