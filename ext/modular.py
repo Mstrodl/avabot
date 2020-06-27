@@ -316,6 +316,12 @@ webcomics = [
     "friendly": "Kill Six Billion Demons",
     "check_updates": common_rss,
     "rss_url": "https://killsixbilliondemons.com/feed/"
+  },
+  {
+    "slug": "garfield",
+    "friendly": "Garfield",
+    "check_updates": common_rss,
+    "rss_url": "https://www.comicsrss.com/rss/garfield.rss"
   } # ,
   # {
   #   "slug": "avasdemon",
