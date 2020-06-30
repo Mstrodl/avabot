@@ -257,6 +257,12 @@ webcomics = [
     "check_updates": common_rss,
     "rss_url": "https://www.webtoons.com/en/challenge/bodies/rss?title_no=313877"
   },
+  {
+    "slug": "mageanddemonqueen",
+    "friendly": "Mage & Demon Queen",
+    "check_updates": common_rss,
+    "rss_url": "https://www.webtoons.com/en/comedy/mage-and-demon-queen/rss?title_no=1438"
+  },
 #  {
 #    "slug": "smbc",
 #    "friendly": "Saturday Morning Breakfast Cereal",
