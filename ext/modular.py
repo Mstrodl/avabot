@@ -263,6 +263,12 @@ webcomics = [
     "check_updates": common_rss,
     "rss_url": "https://www.webtoons.com/en/comedy/mage-and-demon-queen/rss?title_no=1438"
   },
+  {
+    "slug": "ixbr",
+    "friendly": "ix.br status page",
+    "check_updates": common_rss,
+    "rss_url": "https://status.ix.br/rss"
+  },
 #  {
 #    "slug": "smbc",
 #    "friendly": "Saturday Morning Breakfast Cereal",
