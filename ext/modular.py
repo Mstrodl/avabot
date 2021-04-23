@@ -388,7 +388,7 @@ class Modular(Cog):
         continue
 
       self.bot.logger.info(f"Checked for updates on {friendly_name}")
-      announced_post = await self.bot.r.table("updates").get(comic["slug"]).run()
+      announced_post = await self.bot.r.table("updates").get(comic["slug"]).run(self.bot.r_connection)
 
       if announced_post and results["latest_post"]["unique_id"] == announced_post["unique_id"]:
         self.bot.logger.info(f"No updates for {friendly_name}")
@@ -401,7 +401,7 @@ class Modular(Cog):
         "url": results["latest_post"]["url"],
         "title": results["latest_post"]["title"],
         "time": results["latest_post"]["time"]
-      }, conflict="update").run()
+      }, conflict="update").run(self.bot.r_connection)
       await self.announce_comic(comic, results)
 
   async def announce_comic(self, comic, results):
@@ -450,7 +450,7 @@ class Modular(Cog):
         await channel["channel"].send(response)
 
   async def get_channels(self, comic_slug):
-    subscriptions = await self.bot.r.table("subscriptions").get_all(comic_slug, index="slug").run()
+    subscriptions = await self.bot.r.table("subscriptions").get_all(comic_slug, index="slug").run(self.bot.r_connection)
     return [{
       "channel": self.bot.get_channel(int(subscription["channel_id"])),
       "role": (discord.utils.get(
@@ -464,7 +464,7 @@ class Modular(Cog):
     """Gets latest panel of a webcomic"""
     if not comic_slug in self.comic_dict:
       return await ctx.send("Comic doesn't exist")
-    update = await self.bot.r.table("updates").get(comic_slug).run()
+    update = await self.bot.r.table("updates").get(comic_slug).run(self.bot.r_connection)
     await ctx.send(f"Latest panel for {comic_slug}: {update['title']} - {update['url']}")
 
   @commands.command(aliases=["unsubscribe", "unsub", "sub"])
@@ -473,7 +473,7 @@ class Modular(Cog):
     if not role:
       subscriptions = self.bot.r \
       .table("subscriptions") \
-      .get_all(str(ctx.guild.id), index="guild_id").run()
+      .get_all(str(ctx.guild.id), index="guild_id").run(self.bot.r_connection)
 
       role_list = "\n".join([
         f'{self.bot.get_channel(int(subscription["channel_id"])).mention} '
@@ -495,7 +495,7 @@ class Modular(Cog):
       .get_all(str(role.id), index="role_id") \
       .count() \
       .gt(0) \
-      .run()
+      .run(self.bot.r_connection)
 
     if not allowed:
       return await ctx.send("Role not found")
@@ -527,7 +527,7 @@ class Modular(Cog):
     subscriptions = await self.bot.r \
       .table("subscriptions") \
       .filter(filter_dict) \
-      .run()
+      .run(self.bot.r_connection)
     subscription_list = "\n".join([f'**{self.comic_dict[subscription["slug"]]["friendly"]}** {self.bot.get_channel(int(subscription["channel_id"])).mention}' +
                      ((" " +
                      discord.utils.get(
@@ -555,7 +555,7 @@ class Modular(Cog):
       "guild_id": str(ctx.guild.id),
       "slug": slug
     }
-    results = await self.bot.r.table("subscriptions").filter(sub_dict).delete().run()
+    results = await self.bot.r.table("subscriptions").filter(sub_dict).delete().run(self.bot.r_connection)
     if results["deleted"] <= 0:
       return await ctx.send("No subscriptions deleted")
     elif results["deleted"] > 0:
@@ -577,10 +577,10 @@ class Modular(Cog):
       "guild_id": str(ctx.guild.id),
       "slug": slug,
     }
-    await self.bot.r.table("subscriptions").filter(sub_dict).delete().run()
+    await self.bot.r.table("subscriptions").filter(sub_dict).delete().run(self.bot.r_connection)
     sub_dict["role_id"] = str(role.id) if role else None
 
-    await self.bot.r.table("subscriptions").insert(sub_dict).run()
+    await self.bot.r.table("subscriptions").insert(sub_dict).run(self.bot.r_connection)
     return await ctx.send(f'Done! {channel.mention} has a new subscription to {self.comic_dict[slug]["friendly"]}!')
 
   @commands.command()
