@@ -269,6 +269,12 @@ webcomics = [
     "check_updates": common_rss,
     "rss_url": "https://status.ix.br/rss"
   },
+  {
+    "slug": "sourcehut",
+    "friendly": "sourcehut blog",
+    "check_updates": common_rss,
+    "rss_url": "https://sourcehut.org/blog/index.xml"
+  },
 #  {
 #    "slug": "smbc",
 #    "friendly": "Saturday Morning Breakfast Cereal",
