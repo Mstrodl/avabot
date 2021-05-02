@@ -275,6 +275,12 @@ webcomics = [
     "check_updates": common_rss,
     "rss_url": "https://sourcehut.org/blog/index.xml"
   },
+  {
+    "slug": "rubenerd",
+    "friendly": "Rubenerd",
+    "check_updates": common_rss,
+    "rss_url": "https://rubenerd.com/feed/"
+  },
 #  {
 #    "slug": "smbc",
 #    "friendly": "Saturday Morning Breakfast Cereal",
