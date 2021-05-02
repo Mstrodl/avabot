@@ -277,7 +277,7 @@ webcomics = [
   },
   {
     "slug": "rubenerd",
-    "friendly": "By Ruben Schade in s/ Singapore/ Sydney/ since 2004-ish.",
+    "friendly": "Rubenerd",
     "check_updates": common_rss,
     "rss_url": "https://rubenerd.com/feed/"
   },
