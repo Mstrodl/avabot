@@ -275,6 +275,12 @@ webcomics = [
     "check_updates": common_rss,
     "rss_url": "https://sourcehut.org/blog/index.xml"
   },
+  {
+    "slug": "rubenerd",
+    "friendly": "By Ruben Schade in s/ Singapore/ Sydney/ since 2004-ish.",
+    "check_updates": common_rss,
+    "rss_url": "https://rubenerd.com/feed/"
+  },
 #  {
 #    "slug": "smbc",
 #    "friendly": "Saturday Morning Breakfast Cereal",
