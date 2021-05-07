@@ -382,7 +382,7 @@ class Modular(Cog):
         await asyncio.sleep(10 * 60)  # Check RSS every 10 min
     self.check_loop = self.bot.loop.create_task(run_check())
 
-  def __unload(self):
+  def cog_unload(self):
     self.check_loop.cancel()
 
   async def check_updates(self):

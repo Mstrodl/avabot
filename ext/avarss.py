@@ -221,7 +221,7 @@ class AvaRSS(Cog):
     page_number = urlparse.parse_qs(parsed_link.query)["page"][0]
     return int(page_number)
 
-  def __unload(self):
+  def cog_unload(self):
     self.check_loop.cancel()
     self.file_handle.seek(0)
     self.file_handle.write(str(self.last_known_page))

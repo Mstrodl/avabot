@@ -113,7 +113,7 @@ class AvaScrape(Cog):
     action_message = "Subscribed to" if subscribed else "Unsubscribed from"
     return await ctx.send(f"{action_message} page updates!")
 
-  def __unload(self):
+  def cog_unload(self):
     if self.loop_task:
       self.loop_task.cancel()
 
