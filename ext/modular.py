@@ -281,6 +281,12 @@ webcomics = [
     "check_updates": common_rss,
     "rss_url": "https://rubenerd.com/feed/"
   },
+  {
+    "slug": "oxidecomputer",
+    "friendly": "Oxide Computer",
+    "check_updates": common_rss,
+    "rss_url": "https://oxide.computer/blog/feed"
+  },
 #  {
 #    "slug": "smbc",
 #    "friendly": "Saturday Morning Breakfast Cereal",
